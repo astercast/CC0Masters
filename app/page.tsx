@@ -292,14 +292,24 @@ export default function CC0Masters() {
   }, [fetchLeaderboard]);
 
   const triggerScan = async () => {
-    setTriggering(true); setScanMsg('INITIATING SCAN...');
+    setTriggering(true); setScanMsg('⬡ SCAN RUNNING — THIS TAKES ~20 MIN...');
     try {
-      const res = await fetch('/api/trigger',{method:'POST'});
+      const res = await fetch('/api/trigger', { method:'POST' });
       const d = await res.json();
-      setScanMsg(d.success ? `✓ SCAN COMPLETE — ${d.owners} OWNERS` : `ERROR: ${d.error}`);
-      if (d.success) setTimeout(fetchLeaderboard, 2000);
-    } catch { setScanMsg('ERROR: SCAN FAILED'); }
-    finally { setTriggering(false); setTimeout(()=>setScanMsg(''), 6000); }
+      if (d.success) {
+        setScanMsg('✓ SCAN COMPLETE — REFRESHING...');
+        setTimeout(fetchLeaderboard, 2000);
+        setTimeout(()=>setScanMsg(''), 8000);
+      } else {
+        setScanMsg(`ERROR: ${d.error}`);
+        setTimeout(()=>setScanMsg(''), 8000);
+      }
+    } catch {
+      setScanMsg('✓ SCAN RUNNING IN BACKGROUND — REFRESH IN ~20 MIN');
+      setTimeout(()=>setScanMsg(''), 30000);
+    } finally {
+      setTriggering(false);
+    }
   };
 
   const sorted = (data?.leaders??[])
@@ -354,7 +364,7 @@ export default function CC0Masters() {
               marginBottom:10,
             }}>CC0MASTERS</h1>
             <p style={{ fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text2)',letterSpacing:3 }}>
-              WHO WILL CATCH THEM ALL?
+              WHO WILL COLLECT THEM ALL?
             </p>
           </div>
 
@@ -477,7 +487,9 @@ export default function CC0Masters() {
             <div style={{ fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--text2)',marginBottom:8,letterSpacing:1 }}>NO LEADERBOARD DATA YET</div>
             <div style={{ fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--dim)',lineHeight:2.8 }}>
               PRESS ⬡ SCAN NOW TO INDEX ALL 9,999 TOKEN HOLDERS<br/>
-              SCANS RUN AUTOMATICALLY EVERY NIGHT AT 02:00 UTC
+              THE SCAN TAKES ~20 MINUTES TO COMPLETE<br/>
+              ONCE DONE, HIT ↺ REFRESH TO SEE THE RESULTS<br/>
+              <span style={{color:'var(--text2)'}}>SCANS RUN AUTOMATICALLY EVERY NIGHT AT 02:00 UTC</span>
             </div>
           </div>
         ) : (

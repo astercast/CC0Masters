@@ -57,16 +57,19 @@ async function multicallBatch(
   rpcRetries = 2
 ): Promise<Array<{ success: boolean; data: string }>> {
   const n = calls.length;
-  const tupleSize = 5 * 32;
+  // Input struct size: target(32) + allowFailure(32) + bytes_offset(32) + bytes_len(32) + calldata_padded(64) = 192
+  // (ownerOf and tokenURI both have 36-byte calldata, padded to 64 bytes)
+  const INPUT_STRUCT_SIZE = 6 * 32; // 192 bytes
   let data = '82ad56cb'; // aggregate3 selector
   data += pad32hex('20');
   data += pad32hex(n.toString(16));
-  for (let i = 0; i < n; i++) data += pad32hex((i * tupleSize).toString(16));
+  // Offsets are relative to start of offset table (after array length word)
+  for (let i = 0; i < n; i++) data += pad32hex((n * 32 + i * INPUT_STRUCT_SIZE).toString(16));
   for (const c of calls) {
     const cd = c.callData.replace('0x','');
     data += pad32hex(c.target.slice(2));
-    data += pad32hex('1'); // allowFailure
-    data += pad32hex('60'); // bytes offset
+    data += pad32hex('1'); // allowFailure = true
+    data += pad32hex('60'); // offset to callData bytes within struct (after target+allowFailure+this_offset = 96 bytes)
     data += pad32hex((cd.length/2).toString(16));
     data += cd.padEnd(Math.ceil(cd.length/64)*64,'0');
   }
@@ -76,20 +79,23 @@ async function multicallBatch(
       const res = await fetch(ETH_RPC, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ jsonrpc:'2.0', method:'eth_call', id:1, params:[{ to:MULTICALL3, data:'0x'+data },'latest'] }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(30000),
       });
       const json = await res.json();
-      if (!json.result) { if (attempt < rpcRetries) { await sleep(1000); continue; } return []; }
+      if (!json.result) { if (attempt < rpcRetries) { await sleep(1500); continue; } return []; }
 
       const raw = json.result.slice(2);
       const numResults = parseInt(raw.slice(64,128), 16);
       const results: Array<{ success: boolean; data: string }> = [];
 
+      // OFFSET TABLE starts at hex char 128 (after outer-offset word and array-length word)
+      // Each offset[i] is relative to start of offset table
       for (let i = 0; i < numResults; i++) {
-        const tupleOff = parseInt(raw.slice(128 + i*64, 192 + i*64), 16) * 2;
-        const success = parseInt(raw.slice(tupleOff, tupleOff+64), 16) !== 0;
-        const bytesRelOff = parseInt(raw.slice(tupleOff+64, tupleOff+128), 16) * 2;
-        const bytesStart = tupleOff + bytesRelOff;
+        const offsetVal = parseInt(raw.slice(128 + i*64, 192 + i*64), 16);
+        const resultStart = 128 + offsetVal * 2; // absolute hex char position
+        const success = parseInt(raw.slice(resultStart, resultStart+64), 16) !== 0;
+        const bytesRelOff = parseInt(raw.slice(resultStart+64, resultStart+128), 16) * 2;
+        const bytesStart = resultStart + bytesRelOff;
         const bytesLen = parseInt(raw.slice(bytesStart, bytesStart+64), 16);
         const bytesData = raw.slice(bytesStart+64, bytesStart+64+bytesLen*2);
         results.push({ success, data: bytesData });

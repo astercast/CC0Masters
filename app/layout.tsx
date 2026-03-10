@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CC0MASTERS",
     description: "Who will catch all 260 CC0mon? Live on-chain Ethereum leaderboard.",
-    siteName: "CC0MASTERS",
   },
 };
 
@@ -17,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

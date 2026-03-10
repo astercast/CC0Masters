@@ -1,41 +1,20 @@
-export interface EnergyInfo {
-  total: number;
-  collected: number;
-}
-
-export interface SpeciesEntry {
-  number: number;
-  name: string;
-  energy: string;
-  rarity: string;
-  collected: boolean;
-  tokenIds: number[];
-}
-
 export interface CollectorData {
   address: string;
-  totalCC0mon: number;
   collected: number;
   missing: number;
   progress: string;
   totalTokensHeld: number;
-  byEnergy: Record<string, EnergyInfo>;
-  checklist: SpeciesEntry[];
+  byEnergy: Record<string, { collected: number; total: number }>;
+  checklist?: Array<{ number: string; name: string; collected: boolean }>;
 }
 
-export interface LeaderboardEntry {
+export interface LeaderboardEntry extends CollectorData {
   rank: number;
-  address: string;
-  collected: number;
-  missing: number;
-  progress: string;
-  totalTokensHeld: number;
-  byEnergy: Record<string, EnergyInfo>;
-  checklist: SpeciesEntry[];
 }
 
 export interface LeaderboardData {
   updatedAt: string;
+  scannedBlock?: number;          // ← new: last Ethereum block checked
   totalOwners: number;
   totalTokensScanned: number;
   leaders: LeaderboardEntry[];

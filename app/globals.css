@@ -1,0 +1,6 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--ff), monospace; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #070f07; }
+::-webkit-scrollbar-thumb { background: #2d6a0a; }
+::-webkit-scrollbar-thumb:hover { background: #4a9c12; }

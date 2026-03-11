@@ -6,6 +6,7 @@ export interface CollectorData {
   totalTokensHeld: number;
   byEnergy: Record<string, { collected: number; total: number }>;
   checklist?: Array<{ number: string; name: string; collected: boolean }>;
+  collectedSpeciesNums?: number[]; // compact form saved to blob; checklist reconstructed client-side
 }
 
 export interface LeaderboardEntry extends CollectorData {

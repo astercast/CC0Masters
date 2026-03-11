@@ -261,6 +261,7 @@ async function runOnChainScan(
       address, collected, missing, progress,
       totalTokensHeld: tokenIds.length,
       byEnergy, checklist,
+      collectedSpeciesNums: Array.from(collectedSpecies), // compact form for storage
     });
   }
 
@@ -324,7 +325,15 @@ function SkeletonRow({delay}:{delay:number}) {
   </tr>;
 }
 
-function DetailPanel({ entry, registryImages }:{entry:LeaderboardEntry;registryImages:Record<string,{svg:string;name:string}>}) {
+function DetailPanel({ entry, registryImages, registryData }:{entry:LeaderboardEntry;registryImages:Record<string,{svg:string;name:string}>;registryData:Record<string,{name:string;energy:string}>}) {
+  // Reconstruct checklist from collectedSpeciesNums if not stored in entry
+  const checklist = entry.checklist ?? (() => {
+    const collected = new Set(entry.collectedSpeciesNums ?? []);
+    return Array.from({length: TOTAL_SPECIES}, (_,i) => {
+      const num = String(i+1);
+      return { number: num, name: registryData[num]?.name ?? `Species #${num}`, collected: collected.has(i+1) };
+    });
+  })();
   return <div style={{background:'linear-gradient(180deg,var(--panel2) 0%,var(--bg3) 100%)',borderTop:'1px solid var(--green1)',borderBottom:'2px solid var(--green1)',padding:22,animation:'gridReveal 0.35s ease both'}}>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(90px,1fr))',gap:8,marginBottom:20}}>
       {([['COLLECTED',entry.collected,'var(--lime)'],['MISSING',entry.missing,'var(--red)'],['COMPLETE',entry.progress,'var(--bright)'],['TOKENS',entry.totalTokensHeld,'var(--amber)']] as [string,string|number,string][]).map(([l,v,c])=>(
@@ -352,7 +361,7 @@ function DetailPanel({ entry, registryImages }:{entry:LeaderboardEntry;registryI
     </div>
     <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--lime)',marginBottom:8,letterSpacing:2}}>▸ COLLECTION — {entry.collected}/{TOTAL_SPECIES} SPECIES</div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(64px,1fr))',gap:4,maxHeight:300,overflowY:'auto',paddingRight:4}}>
-      {entry.checklist?.map((sp,i)=>{ const img=registryImages[sp.number];
+      {checklist.map((sp,i)=>{ const img=registryImages[sp.number];
         return <div key={sp.number} style={{background:sp.collected?'rgba(74,156,18,0.07)':'rgba(0,0,0,0.2)',border:`1px solid ${sp.collected?'rgba(74,156,18,0.3)':'var(--border)'}`,padding:5,textAlign:'center',position:'relative',opacity:sp.collected?1:0.18,animation:`fadeIn 0.3s ease ${Math.min(i*4,500)}ms both`}}>
           {sp.collected&&<div style={{position:'absolute',top:2,right:3,fontFamily:'var(--ff-pixel)',fontSize:5,color:'var(--glow)'}}>✓</div>}
           {img&&<img src={img.svg} alt={sp.name} width={48} height={48} loading="lazy" style={{imageRendering:'pixelated',display:'block',margin:'0 auto 3px'}}/>}
@@ -432,8 +441,14 @@ export default function CC0Masters() {
       const blockData = await blockRes.json();
       const scannedBlock = parseInt(blockData.result, 16);
 
+      // Strip checklist before saving to reduce payload size (~14MB -> ~1MB)
+      // Checklist is reconstructed client-side when detail panel opens
+      const leaders = collectors.map((c,i) => {
+        const { checklist: _cl, ...rest } = c as typeof c & { checklist?: unknown };
+        return { rank:i+1, ...rest };
+      });
       await fetch('/api/save', { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ updatedAt:new Date().toISOString(), scannedBlock, totalOwners:collectors.length, totalTokensScanned:TOTAL_TOKENS, leaders:collectors.map((c,i)=>({rank:i+1,...c})) }) });
+        body: JSON.stringify({ updatedAt:new Date().toISOString(), scannedBlock, totalOwners:collectors.length, totalTokensScanned:TOTAL_TOKENS, leaders }) });
 
       setScanPhase('COMPLETE'); setScanPct(100); setScanDetail(`✓ Done! ${collectors.length} holders ranked.`);
       setTimeout(()=>{ fetchLeaderboard(); setScanning(false); setScanPct(0); setScanPhase(''); setScanDetail(''); }, 2000);
@@ -501,7 +516,7 @@ export default function CC0Masters() {
               <PodiumCard entry={sorted[0]} rank={1} onClick={()=>setOpenRow(openRow===sorted[0].address?null:sorted[0].address)}/>
               <PodiumCard entry={sorted[2]} rank={3} onClick={()=>setOpenRow(openRow===sorted[2].address?null:sorted[2].address)}/>
             </div>
-            {[sorted[0],sorted[1],sorted[2]].map(e=>openRow===e.address&&<div key={e.address} style={{marginTop:8}}><DetailPanel entry={e} registryImages={registryImages}/></div>)}
+            {[sorted[0],sorted[1],sorted[2]].map(e=>openRow===e.address&&<div key={e.address} style={{marginTop:8}}><DetailPanel entry={e} registryImages={registryImages} registryData={registryData}/></div>)}
           </section>
         </>}
 
@@ -569,7 +584,7 @@ export default function CC0Masters() {
                           </span>
                         </td>
                       </tr>,
-                      isOpen&&<tr key={`${entry.address}-d`}><td colSpan={8} style={{padding:0}}><DetailPanel entry={entry} registryImages={registryImages}/></td></tr>,
+                      isOpen&&<tr key={`${entry.address}-d`}><td colSpan={8} style={{padding:0}}><DetailPanel entry={entry} registryImages={registryImages} registryData={registryData}/></td></tr>,
                     ];
                   })}
                 </tbody>

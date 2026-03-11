@@ -614,21 +614,22 @@ export default function CC0Masters() {
             </a>
           ))}
         </div>
-               {' '}▸
-          <a href="https://cc-0mon-cards.vercel.app/" target="_blank" rel="noreferrer"
-  style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
-  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
-  CC0mon Cards by <a href="https://twitter.com/beastoshii" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @beastoshii </a>
-</a>
-{' '}▸
-<a href="https://twitter.com/0xfilter8" target="_blank" rel="noreferrer"
-  style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
-  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
-  Monomon by <span style={{color:'var(--lime)',marginLeft:2}}> @0xfilter8 </span>
-</a>
-{' '}▸
+               <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
+  <a href="https://cc-0mon-cards.vercel.app/" target="_blank" rel="noreferrer"
+    style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
+    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
+    CC0mon Cards by <a href="https://twitter.com/beastoshii" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @beastoshii </a>
+  </a>
+  {' '}▸
+  <a href="https://monomon.vercel.app/" target="_blank" rel="noreferrer"
+    style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
+    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
+    Monomon by <a href="https://twitter.com/0xfilter8" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @0xfilter8 </a>
+  </a>
+  {' '}▸
+</span>
       </div>
 
       {/* ══ HEADER ══ */}

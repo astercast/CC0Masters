@@ -105,7 +105,7 @@ function decodeAddress(hex: string): string | null {
   return addr === '0x0000000000000000000000000000000000000000' ? null : addr.toLowerCase();
 }
 
-function decodeTokenURI(hex: string): {speciesName:string;energy:string}|null {
+function decodeTokenURI(hex: string): {speciesName:string;energy:string;image:string}|null {
   try {
     const sl = parseInt(hex.slice(64,128),16);
     const sh = hex.slice(128,128+sl*2);
@@ -119,6 +119,7 @@ function decodeTokenURI(hex: string): {speciesName:string;energy:string}|null {
     return {
       speciesName,
       energy: j.attributes?.find((a:{trait_type:string})=>a.trait_type==='Energy')?.value??'',
+      image: j.image??'',
     };
   } catch { return null; }
 }
@@ -126,7 +127,8 @@ function decodeTokenURI(hex: string): {speciesName:string;energy:string}|null {
 async function runOnChainScan(
   setPhase:(s:string)=>void, setPct:(n:number)=>void, setDetail:(s:string)=>void,
   setLiveOwners:(n:number)=>void, abortRef:React.MutableRefObject<boolean>,
-  registryData:Record<string,{name:string;energy:string}>
+  registryData:Record<string,{name:string;energy:string}>,
+  setImages:(fn:(prev:Record<string,{svg:string;png:string;name:string}>)=>Record<string,{svg:string;png:string;name:string}>)=>void
 ): Promise<CollectorData[]> {
   const BATCH=500, URI_BATCH=50;
   setPhase('PHASE 1/3 — READING OWNERS');
@@ -146,7 +148,7 @@ async function runOnChainScan(
     await sleep(200);
   }
   setPhase('PHASE 2/3 — READING SPECIES DATA');
-  const tokenSpecies=new Map<number,{speciesName:string;energy:string}>();
+  const tokenSpecies=new Map<number,{speciesName:string;energy:string;image:string}>();
   for (let s=1; s<=TOTAL_TOKENS&&!abortRef.current; s+=URI_BATCH) {
     const e=Math.min(s+URI_BATCH-1,TOTAL_TOKENS), ids=Array.from({length:e-s+1},(_,i)=>s+i);
     const r=await multicallBatch(ids.map(makeTokenURICall),2);
@@ -160,6 +162,18 @@ async function runOnChainScan(
   const nameToNum=new Map<string,number>();
   for (const [numStr,info] of Object.entries(registryData)) {
     if (info.name) nameToNum.set(info.name.toLowerCase(),parseInt(numStr));
+  }
+  // Cache on-chain images (data URIs from tokenURI) — avoids external image requests entirely
+  const onChainImages: Record<string,{svg:string;png:string;name:string}> = {};
+  for (const [,sp] of tokenSpecies) {
+    if (!sp.image) continue;
+    const numStr = Object.keys(registryData).find(k => registryData[k].name?.toLowerCase() === sp.speciesName.toLowerCase());
+    if (numStr && !onChainImages[numStr]) {
+      onChainImages[numStr] = { svg: sp.image, png: sp.image, name: sp.speciesName };
+    }
+  }
+  if (Object.keys(onChainImages).length > 0) {
+    setImages(prev => ({ ...prev, ...onChainImages }));
   }
   // Build energy map from decoded token data
   const speciesEnergy=new Map<number,string>();
@@ -502,7 +516,7 @@ export default function CC0Masters() {
     scanAbort.current=false;
     setScanning(true); setScanPct(0); setScanPhase(''); setScanDetail(''); setLiveOwners(0);
     try {
-      const collectors=await runOnChainScan(setScanPhase,setScanPct,setScanDetail,setLiveOwners,scanAbort,registryData);
+      const collectors=await runOnChainScan(setScanPhase,setScanPct,setScanDetail,setLiveOwners,scanAbort,registryData,setImages);
       if (scanAbort.current) { setScanning(false); return; }
       setScanPhase('SAVING...'); setScanPct(95); setScanDetail('Writing to storage...');
       collectors.sort((a,b)=>b.collected-a.collected);
@@ -543,7 +557,7 @@ export default function CC0Masters() {
       {/* ══ COMMUNITY BANNER ══ */}
       <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:'7px 24px',
         display:'flex',alignItems:'center',gap:16,flexWrap:'wrap',justifyContent:'center'}}>
-        <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
+        <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
           ▶ CHECK OUT SITES BY{' '}
           <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
             style={{color:'var(--lime)',textDecoration:'none',letterSpacing:1}}
@@ -561,7 +575,7 @@ export default function CC0Masters() {
           ].map(([label,href])=>(
             <a key={label} href={href} target="_blank" rel="noreferrer"
               className="btn btn-filter"
-              style={{fontFamily:'var(--ff-pixel)',fontSize:6,letterSpacing:1,textDecoration:'none',padding:'4px 10px'}}>
+              style={{fontFamily:'var(--ff-pixel)',fontSize:8,letterSpacing:1,textDecoration:'none',padding:'5px 12px'}}>
               {label}
             </a>
           ))}
@@ -574,13 +588,13 @@ export default function CC0Masters() {
         {/* top bar */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 24px',
           borderBottom:'1px solid var(--border)',background:'var(--bg)'}}>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',letterSpacing:2}}>
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:2}}>
             <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721 · CC0 · {data?.scannedBlock?`BLOCK #${data.scannedBlock.toLocaleString()}`:'LIVE'}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <div style={{width:6,height:6,background:'var(--lime)',borderRadius:0,
               boxShadow:'0 0 6px var(--lime)',animation:'pulse 2s step-end infinite'}}/>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
+            <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
           </div>
         </div>
 
@@ -814,8 +828,8 @@ export default function CC0Masters() {
 
         <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:'flex-end'}}>
           <div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
               ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
               <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
             </div>
@@ -827,7 +841,7 @@ export default function CC0Masters() {
               ['CC0MON.COM ▸','https://cc0mon.com'],
             ].map(([l,h])=>(
               <a key={l} href={h} target="_blank" rel="noreferrer"
-                style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text3)',textDecoration:'none',
+                style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',textDecoration:'none',
                   letterSpacing:1,transition:'color 0.1s'}}
                 onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}
                 onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--text3)'}>
@@ -839,7 +853,7 @@ export default function CC0Masters() {
 
         {/* Hidden admin section */}
         <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--border)'}}>
-          <details style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text3)'}}>
+          <details style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)'}}>
             <summary style={{cursor:'pointer',letterSpacing:1,listStyle:'none',display:'flex',alignItems:'center',gap:6,userSelect:'none'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color='var(--text2)';}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color='var(--text3)';}}>
@@ -870,7 +884,7 @@ export default function CC0Masters() {
               @ASTER0X
             </a>
           </div>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:5,color:'var(--text3)',letterSpacing:1,opacity:0.5}}>
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--text3)',letterSpacing:1,opacity:0.5}}>
             CC0 · NO RIGHTS RESERVED · BUILD BY THE COMMUNITY
           </div>
         </div>

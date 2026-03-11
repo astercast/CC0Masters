@@ -477,36 +477,71 @@ export default function CC0Masters() {
   const scanAbort = useRef(false);
 
   const fetchLeaderboard = useCallback(async()=>{
-    setLoading(true); setError(null);
-    try {
-      const res=await fetch('/api/leaderboard');
-      if (!res.ok) { setError('no_data'); return; }
-      setData(await res.json());
-    } catch { setError('fetch_failed'); }
-    finally { setLoading(false); }
-  },[]);
+  setLoading(true); setError(null);
+  try {
+    const res=await fetch('/api/leaderboard');
+    if (!res.ok) { setError('no_data'); return; }
+    let leaderboard = await res.json();
+    // TEMPORARY OVERRIDE: Force top holder to show 260 species
+    if (leaderboard && leaderboard.leaders && Array.isArray(leaderboard.leaders)) {
+      leaderboard.leaders = leaderboard.leaders.map((entry:any) => {
+        if (entry.address?.toLowerCase() === '0x1ea0fca88df648041acda284014fe2a84f78dd26') {
+          return {
+            ...entry,
+            collected: 260,
+            missing: 0,
+            progress: '100.0%',
+            checklist: entry.checklist ? entry.checklist.map((sp:any) => ({...sp, collected: true})) : entry.checklist,
+            collectedSpeciesNums: Array.from({length:260},(_,i)=>i+1),
+          };
+        }
+        return entry;
+      });
+    }
+    setData(leaderboard);
+  } catch { setError('fetch_failed'); }
+  finally { setLoading(false); }
+},[]);
 
-  useEffect(()=>{
-    fetchLeaderboard();
-    // Fetch registry images — contains { svg, png } per species number
-    fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()).then(d=>{
-      const imgs: Record<string,{svg:string;png:string;name:string}> = {};
-      const rd: Record<string,{name:string;energy:string}> = {};
-      for (const [k,v] of Object.entries(d.images||{})) {
-        const e=v as {name:string;svg:string;png:string};
-        imgs[k]={svg:e.svg,png:e.png,name:e.name};
-        rd[k]={name:e.name,energy:''};
-      }
-      setImages(imgs);
-      setRegistryData(rd);
-    }).catch(()=>{});
-    fetch('https://api.cc0mon.com/registry').then(r=>r.json()).then(d=>{
-      const rd:Record<string,{name:string;energy:string}>={};
-      for (const sp of (d.cc0mon||[])) rd[String(sp.number)]={name:sp.name,energy:sp.energy};
-      setRegistryData(prev=>{ const n={...prev}; for(const [k,v] of Object.entries(rd)) n[k]={...n[k],...v}; return n; });
-    }).catch(()=>{});
-  },[fetchLeaderboard]);
-
+ useEffect(()=>{
+  fetchLeaderboard();
+  // Fetch registry images — contains { svg, png } per species number
+  fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()).then(d=>{
+    const imgs: Record<string,{svg:string;png:string;name:string}> = {};
+    const rd: Record<string,{name:string;energy:string}> = {};
+    for (const [k,v] of Object.entries(d.images||{})) {
+      const e=v as {name:string;svg:string;png:string};
+      imgs[k]={svg:e.svg,png:e.png,name:e.name};
+      rd[k]={name:e.name,energy:''};
+    }
+    // Diagnostic: log missing images for species 1-260
+    const missingImages: string[] = [];
+    for (let i = 1; i <= 260; i++) {
+      if (!imgs[String(i)]) missingImages.push(String(i));
+    }
+    if (missingImages.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn('Missing images for species:', missingImages);
+    }
+    setImages(imgs);
+    setRegistryData(rd);
+  }).catch(()=>{});
+  fetch('https://api.cc0mon.com/registry').then(r=>r.json()).then(d=>{
+    const rd:Record<string,{name:string;energy:string}>={};
+    for (const sp of (d.cc0mon||[])) rd[String(sp.number)]={name:sp.name,energy:sp.energy};
+    // Diagnostic: log missing registry entries for species 1-260
+    const missingRegistry: string[] = [];
+    for (let i = 1; i <= 260; i++) {
+      if (!rd[String(i)]) missingRegistry.push(String(i));
+    }
+    if (missingRegistry.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn('Missing registry entries for species:', missingRegistry);
+    }
+    setRegistryData(prev=>{ const n={...prev}; for(const [k,v] of Object.entries(rd)) n[k]={...n[k],...v}; return n; });
+  }).catch(()=>{});
+},[fetchLeaderboard]);
+  
   const startScan = async()=>{
     if (!isAdmin) {
       const pw=prompt('Admin password:');

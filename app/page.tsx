@@ -883,6 +883,31 @@ export default function CC0Masters() {
               ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
               <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
             </div>
+            <div style={{
+  fontFamily: 'var(--ff-pixel)',
+  fontSize: 'clamp(22px,4vw,36px)',
+  color: 'var(--bright)',
+  marginBottom: '18px',
+  letterSpacing: '2px',
+  textShadow: '0 0 10px var(--lime), 0 0 30px rgba(124,232,50,0.5)'
+}}>
+  CC0mon by
+  <a
+    href="https://twitter.com/SatoshisMom"
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      color: 'var(--lime)',
+      textDecoration: 'none',
+      marginLeft: '8px',
+      fontSize: 'clamp(22px,4vw,36px)'
+    }}
+    onMouseEnter={e => (e.currentTarget.style.color = 'var(--glow)')}
+    onMouseLeave={e => (e.currentTarget.style.color = 'var(--lime)')}
+  >
+    @SatoshisMom
+  </a>
+</div>
           </div>
           <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap'}}>
             {[

@@ -7,8 +7,8 @@ const TOTAL_SPECIES  = 260;
 const TOTAL_TOKENS   = 9999;
 const CC0_CONTRACT   = '0xeeb036dbbd3039429c430657ed9836568da79d5f';
 const MULTICALL3     = '0xcA11bde05977b3631167028862bE2a173976CA11';
-const ETH_RPC        = 'https://eth.llamarpc.com';
-const ETH_RPC2       = 'https://ethereum.publicnode.com'; // used for tokenURI (large responses)
+const ETH_RPC        = '/api/rpc'; // proxied through Next.js to avoid CORS
+const ETH_RPC2       = '/api/rpc'; // same proxy for all calls
 
 const ENERGY_TYPES = ['Fire','Ice','Grass','Electric','Ghost','Dragon','Metal','Toxic','Rock','Bug','Ocean','Earth','Underworld','Mythic','Celestial','Fossil'];
 const ENERGY_EMOJIS: Record<string,string> = { Fire:'🔥',Ice:'❄️',Grass:'🌿',Electric:'⚡',Ghost:'👻',Dragon:'🐉',Metal:'⚙️',Toxic:'☠️',Rock:'🪨',Bug:'🐛',Ocean:'🌊',Earth:'🌍',Underworld:'🌑',Mythic:'✨',Celestial:'☀️',Fossil:'🦴' };

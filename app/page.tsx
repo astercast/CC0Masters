@@ -105,19 +105,20 @@ function decodeAddress(hex: string): string | null {
   return addr === '0x0000000000000000000000000000000000000000' ? null : addr.toLowerCase();
 }
 
-function decodeTokenURI(hex: string): {speciesNum:number;energy:string;name:string}|null {
+function decodeTokenURI(hex: string): {speciesName:string;energy:string}|null {
   try {
     const sl = parseInt(hex.slice(64,128),16);
     const sh = hex.slice(128,128+sl*2);
     const str = decodeURIComponent(escape(String.fromCharCode(...Array.from({length:sh.length/2},(_,i)=>parseInt(sh.slice(i*2,i*2+2),16)))));
     const b64 = str.split(',')[1];
     const j = JSON.parse(atob(b64));
-    const m = j.name?.match(/#(\d+)/);
-    if (!m) return null;
+    // Name attr is like "Vilewing #086" — strip the serial number to get species name
+    const nameAttr = j.attributes?.find((a:{trait_type:string})=>a.trait_type==='Name')?.value ?? j.name ?? '';
+    const speciesName = nameAttr.replace(/ #\d+$/, '').trim();
+    if (!speciesName) return null;
     return {
-      speciesNum: parseInt(m[1],10),
+      speciesName,
       energy: j.attributes?.find((a:{trait_type:string})=>a.trait_type==='Energy')?.value??'',
-      name: j.attributes?.find((a:{trait_type:string})=>a.trait_type==='Name')?.value?.replace(/ #\d+$/,'')?? '',
     };
   } catch { return null; }
 }
@@ -145,7 +146,7 @@ async function runOnChainScan(
     await sleep(200);
   }
   setPhase('PHASE 2/3 — READING SPECIES DATA');
-  const tokenSpecies=new Map<number,{speciesNum:number;energy:string;name:string}>();
+  const tokenSpecies=new Map<number,{speciesName:string;energy:string}>();
   for (let s=1; s<=TOTAL_TOKENS&&!abortRef.current; s+=URI_BATCH) {
     const e=Math.min(s+URI_BATCH-1,TOTAL_TOKENS), ids=Array.from({length:e-s+1},(_,i)=>s+i);
     const r=await multicallBatch(ids.map(makeTokenURICall),2);
@@ -155,16 +156,31 @@ async function runOnChainScan(
     await sleep(100);
   }
   setPhase('PHASE 3/3 — BUILDING LEADERBOARD'); setPct(82); setDetail('Computing dex completion...');
-  const speciesInfo=new Map<number,{name:string;energy:string}>();
-  for (const [,sp] of tokenSpecies) if (!speciesInfo.has(sp.speciesNum)) speciesInfo.set(sp.speciesNum,{name:sp.name,energy:sp.energy});
-  for (const [k,v] of Object.entries(registryData)) { const n=parseInt(k); if (!speciesInfo.has(n)) speciesInfo.set(n,v); }
+  // Build name->speciesNum map from registry (the #NNN in token names is a serial, NOT species number)
+  const nameToNum=new Map<string,number>();
+  for (const [numStr,info] of Object.entries(registryData)) {
+    if (info.name) nameToNum.set(info.name.toLowerCase(),parseInt(numStr));
+  }
+  // Build energy map from decoded token data
+  const speciesEnergy=new Map<number,string>();
+  for (const [,sp] of tokenSpecies) {
+    const num=nameToNum.get(sp.speciesName.toLowerCase());
+    if (num&&!speciesEnergy.has(num)) speciesEnergy.set(num,sp.energy);
+  }
   const allSpecies=Array.from({length:TOTAL_SPECIES},(_,i)=>i+1).map(n=>({
-    number:String(n), name:speciesInfo.get(n)?.name??`Species #${n}`, energy:speciesInfo.get(n)?.energy??'',
+    number:String(n),
+    name:registryData[String(n)]?.name??`Species #${n}`,
+    energy:speciesEnergy.get(n)??registryData[String(n)]?.energy??'',
   }));
   const collectors:CollectorData[]=[];
   for (const [address,tokenIds] of ownerTokens) {
     const cs=new Set<number>();
-    for (const tid of tokenIds) { const sp=tokenSpecies.get(tid); if (sp) cs.add(sp.speciesNum); }
+    for (const tid of tokenIds) {
+      const sp=tokenSpecies.get(tid);
+      if (!sp) continue;
+      const num=nameToNum.get(sp.speciesName.toLowerCase());
+      if (num) cs.add(num);
+    }
     const byEnergy:Record<string,{collected:number;total:number}>={};
     for (const et of ENERGY_TYPES) byEnergy[et]={total:allSpecies.filter(s=>s.energy===et).length,collected:allSpecies.filter(s=>s.energy===et&&cs.has(parseInt(s.number))).length};
     const checklist=allSpecies.map(s=>({number:s.number,name:s.name,collected:cs.has(parseInt(s.number))}));
@@ -231,11 +247,11 @@ function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string
   return (
     <div style={{width:size,height:size,position:'relative',display:'flex',alignItems:'center',justifyContent:'center',imageRendering:'pixelated'}}>
       {status==='loading'&&<div className="skeleton" style={{position:'absolute',inset:0}}/>}
-      <img src={src} alt={name} width={size} height={size}
+      <img src={src} alt={name} width={size} height={size} loading="eager"
         style={{imageRendering:'pixelated',display:'block',
           opacity: status==='ok' ? (dimmed?0.18:1) : 0,
-          transition:'opacity 0.15s',
-          position: status==='loading'?'absolute':'relative',
+          transition:'opacity 0.2s',
+          position:'relative',
           filter: dimmed ? 'grayscale(1)' : 'none'}}
         className={className}
       />
@@ -330,7 +346,7 @@ function DetailPanel({
   images: Record<string,{svg:string;png:string;name:string}>;
   registryData: Record<string,{name:string;energy:string}>;
 }) {
-  const [tab, setTab] = useState<'energy'|'dex'>('energy');
+  const [tab, setTab] = useState<'energy'|'dex'>('dex');
 
   const checklist = entry.checklist ?? (()=>{
     const collected = new Set(entry.collectedSpeciesNums??[]);
@@ -403,14 +419,13 @@ function DetailPanel({
       {/* dex tab */}
       {tab==='dex'&&(
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(68px,1fr))',gap:4,
-          maxHeight:400,overflowY:'auto',paddingRight:4}}>
-          {checklist.map((sp,i)=>{
+          maxHeight:520,overflowY:'auto',paddingRight:4,
+          scrollbarWidth:'thin',scrollbarColor:'var(--green1) var(--bg)'}}>
+          {checklist.map((sp)=>{
             const imgData = images[sp.number];
-            // PNG is more reliable for cross-origin img tags; svg as fallback
             const src = imgData?.png || imgData?.svg || '';
             return (
-              <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}
-                style={{animation:`fadeIn 0.2s ease ${Math.min(i*2,400)}ms both`}}>
+              <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}>
                 {sp.collected&&(
                   <div style={{position:'absolute',top:2,right:3,fontFamily:'var(--ff-pixel)',fontSize:5,color:'var(--lime)'}}>✓</div>
                 )}
@@ -438,8 +453,7 @@ export default function CC0Masters() {
   const [images,setImages]               = useState<Record<string,{svg:string;png:string;name:string}>>({});
   const [registryData,setRegistryData]   = useState<Record<string,{name:string;energy:string}>>({});
   const [openRow,setOpenRow]             = useState<string|null>(null);
-  const [sortKey,setSortKey]             = useState<'collected'|'tokens'|'pct'>('collected');
-  const [filter,setFilter]               = useState<'all'|'top10'|'top50'>('all');
+  const [filter,setFilter]               = useState<'all'|'top10'|'top50'>('top10');
   const [isAdmin,setIsAdmin]             = useState(false);
   const [scanning,setScanning]           = useState(false);
   const [scanPhase,setScanPhase]         = useState('');
@@ -508,7 +522,7 @@ export default function CC0Masters() {
   };
 
   const sorted = (data?.leaders??[]).slice()
-    .sort((a,b)=>sortKey==='tokens'?b.totalTokensHeld-a.totalTokensHeld:sortKey==='pct'?parseFloat(b.progress)-parseFloat(a.progress):b.collected-a.collected)
+    .sort((a,b)=>b.collected-a.collected)
     .filter((_,i)=>filter==='top10'?i<10:filter==='top50'?i<50:true);
   const completeCount = data?.leaders.filter(l=>l.collected===TOTAL_SPECIES).length??0;
 
@@ -525,6 +539,34 @@ export default function CC0Masters() {
       <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
         background:'linear-gradient(180deg,transparent,rgba(124,232,50,0.06),transparent)',
         animation:'scanline 8s linear infinite',opacity:0.7}}/>
+
+      {/* ══ COMMUNITY BANNER ══ */}
+      <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:'7px 24px',
+        display:'flex',alignItems:'center',gap:16,flexWrap:'wrap',justifyContent:'center'}}>
+        <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
+          ▶ CHECK OUT SITES BY{' '}
+          <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
+            style={{color:'var(--lime)',textDecoration:'none',letterSpacing:1}}
+            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}>
+            @SPELL_WEB3
+          </a>
+          {' '}▸
+        </span>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+          {[
+            ['🌐 COMMUNITY','https://cc0mon-community.netlify.app/'],
+            ['📖 DEX','https://cc0dex.netlify.app/'],
+            ['🔲 GRID','https://cc0mon-grid.netlify.app/'],
+          ].map(([label,href])=>(
+            <a key={label} href={href} target="_blank" rel="noreferrer"
+              className="btn btn-filter"
+              style={{fontFamily:'var(--ff-pixel)',fontSize:6,letterSpacing:1,textDecoration:'none',padding:'4px 10px'}}>
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
 
       {/* ══ HEADER ══ */}
       <header style={{background:'var(--bg2)',borderBottom:'2px solid var(--green1)',padding:'0',position:'relative'}}>
@@ -670,13 +712,7 @@ export default function CC0Masters() {
                 {f==='all'?'ALL':f==='top10'?'TOP 10':'TOP 50'}
               </button>
             ))}
-            <div style={{width:1,height:12,background:'var(--border)',margin:'0 6px'}}/>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',marginRight:3}}>SORT:</span>
-            {(['collected','tokens','pct'] as const).map(s=>(
-              <button key={s} className={`btn btn-filter${sortKey===s?' active':''}`} onClick={()=>setSortKey(s)}>
-                {s==='collected'?'SPECIES':s==='tokens'?'TOKENS':'% DONE'}
-              </button>
-            ))}
+
             <div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)'}}>
               {sorted.length.toLocaleString()} COLLECTORS
             </div>
@@ -822,8 +858,21 @@ export default function CC0Masters() {
           </details>
         </div>
 
-        <div style={{marginTop:12,fontFamily:'var(--ff-pixel)',fontSize:5,color:'var(--text3)',letterSpacing:1,opacity:0.5,textAlign:'center'}}>
-          CC0 · NO RIGHTS RESERVED · BUILD BY THE COMMUNITY
+        <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--border)',textAlign:'center'}}>
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',letterSpacing:3,marginBottom:6,
+            textShadow:'0 0 20px rgba(124,232,50,0.15)'}}>
+            BUILT BY{' '}
+            <a href="https://x.com/aster0x" target="_blank" rel="noreferrer"
+              style={{color:'var(--lime)',textDecoration:'none',
+                textShadow:'0 0 12px rgba(124,232,50,0.4)'}}
+              onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color='var(--glow)';(e.currentTarget as HTMLElement).style.textShadow='0 0 20px rgba(200,255,80,0.6)';}}
+              onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color='var(--lime)';(e.currentTarget as HTMLElement).style.textShadow='0 0 12px rgba(124,232,50,0.4)';}}>
+              @ASTER0X
+            </a>
+          </div>
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:5,color:'var(--text3)',letterSpacing:1,opacity:0.5}}>
+            CC0 · NO RIGHTS RESERVED · BUILD BY THE COMMUNITY
+          </div>
         </div>
       </footer>
     </div>

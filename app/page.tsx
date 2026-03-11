@@ -8,6 +8,7 @@ const TOTAL_TOKENS   = 9999;
 const CC0_CONTRACT   = '0xeeb036dbbd3039429c430657ed9836568da79d5f';
 const MULTICALL3     = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const ETH_RPC        = 'https://eth.llamarpc.com';
+const ETH_RPC2       = 'https://ethereum.publicnode.com'; // used for tokenURI (large responses)
 
 const ENERGY_TYPES = ['Fire','Ice','Grass','Electric','Ghost','Dragon','Metal','Toxic','Rock','Bug','Ocean','Earth','Underworld','Mythic','Celestial','Fossil'];
 const ENERGY_EMOJIS: Record<string,string> = { Fire:'🔥',Ice:'❄️',Grass:'🌿',Electric:'⚡',Ghost:'👻',Dragon:'🐉',Metal:'⚙️',Toxic:'☠️',Rock:'🪨',Bug:'🐛',Ocean:'🌊',Earth:'🌍',Underworld:'🌑',Mythic:'✨',Celestial:'☀️',Fossil:'🦴' };
@@ -54,7 +55,8 @@ function pad32hex(hex: string) { return hex.padStart(64,'0'); }
 
 async function multicallBatch(
   calls: { target: string; callData: string }[],
-  rpcRetries = 2
+  rpcRetries = 2,
+  rpc = ETH_RPC
 ): Promise<Array<{ success: boolean; data: string }>> {
   const n = calls.length;
   // Input struct size: target(32) + allowFailure(32) + bytes_offset(32) + bytes_len(32) + calldata_padded(64) = 192
@@ -76,9 +78,10 @@ async function multicallBatch(
 
   for (let attempt = 0; attempt <= rpcRetries; attempt++) {
     try {
-      const res = await fetch(ETH_RPC, {
+      const res = await fetch(rpc, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ jsonrpc:'2.0', method:'eth_call', id:1, params:[{ to:MULTICALL3, data:'0x'+data },'latest'] }),
+        // rpc is: '" + rpc + "'
         signal: AbortSignal.timeout(30000),
       });
       const json = await res.json();
@@ -180,15 +183,17 @@ async function runOnChainScan(
     await sleep(200);
   }
 
-  // Phase 2: tokenURI for all 9999 tokens (to get species)
+  // Phase 2: tokenURI for all owned tokens (to get species)
+  // tokenURI responses are large (~6KB each), so use small batches of 50 on publicnode
   setPhase('PHASE 2/3 — READING SPECIES DATA');
   const tokenSpecies = new Map<number, { speciesNum: number; energy: string; name: string }>();
+  const URI_BATCH = 50; // ~300KB per request - safe for publicnode
 
-  for (let start = 1; start <= TOTAL_TOKENS && !abortRef.current; start += BATCH) {
-    const end = Math.min(start + BATCH - 1, TOTAL_TOKENS);
+  for (let start = 1; start <= TOTAL_TOKENS && !abortRef.current; start += URI_BATCH) {
+    const end = Math.min(start + URI_BATCH - 1, TOTAL_TOKENS);
     const ids = Array.from({length: end-start+1}, (_,i) => start+i);
     const calls = ids.map(makeTokenURICall);
-    const results = await multicallBatch(calls);
+    const results = await multicallBatch(calls, 2, ETH_RPC2); // use publicnode for large responses
 
     for (let i = 0; i < results.length; i++) {
       if (!results[i].success) continue;
@@ -199,7 +204,7 @@ async function runOnChainScan(
     const pct = 30 + Math.round((end / TOTAL_TOKENS) * 50);
     setPct(pct);
     setDetail(`Species data: tokens ${start}–${end} (${tokenSpecies.size} decoded)`);
-    await sleep(200);
+    await sleep(100);
   }
 
   // Phase 3: Build collector objects

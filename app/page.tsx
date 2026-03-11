@@ -873,34 +873,29 @@ export default function CC0Masters() {
                 return <div key={`f-${num}-${i}`} style={{flexShrink:0}}><Sprite src={imgData.png||imgData.svg} name={imgData.name} size={40}/></div>;
               })}
             </div>
-          </div>
-        )}
-
-        <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:'flex-end'}}>
-          <div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
-              ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
-              <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
-            </div>
-            <div style={{
-  fontFamily: 'var(--ff-pixel)',
-  fontSize: 'clamp(22px,4vw,36px)',
-  color: 'var(--bright)',
-  marginBottom: '18px',
-  letterSpacing: '2px',
-  textShadow: '0 0 10px var(--lime), 0 0 30px rgba(124,232,50,0.5)'
+   <div style={{
+  marginBottom: '14px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px'
 }}>
-  CC0mon by
+  <span style={{
+    fontFamily: 'Georgia, Times, Times New Roman, serif', // Classic serif font
+    fontSize: '17px',
+    color: 'var(--bright)',
+    letterSpacing: '1px'
+  }}>
+    CC0mon by
+  </span>
   <a
     href="https://twitter.com/SatoshisMom"
     target="_blank"
     rel="noreferrer"
     style={{
+      fontFamily: 'var(--ff-pixel)',
+      fontSize: '16px',
       color: 'var(--lime)',
-      textDecoration: 'none',
-      marginLeft: '8px',
-      fontSize: 'clamp(22px,4vw,36px)'
+      textDecoration: 'none'
     }}
     onMouseEnter={e => (e.currentTarget.style.color = 'var(--glow)')}
     onMouseLeave={e => (e.currentTarget.style.color = 'var(--lime)')}

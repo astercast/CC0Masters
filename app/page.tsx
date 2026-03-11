@@ -600,21 +600,6 @@ export default function CC0Masters() {
             onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}>
             @SPELL_WEB3
           </a>
-          {' '}▸
-          <a href="https://cc-0mon-cards.vercel.app/" target="_blank" rel="noreferrer"
-  style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
-  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
-  CC0mon Cards by <a href="https://twitter.com/beastoshii" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @beastoshii </a>
-</a>
-{' '}▸
-<a href="https://twitter.com/0xfilter8" target="_blank" rel="noreferrer"
-  style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
-  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
-  Monomon by <span style={{color:'var(--lime)',marginLeft:2}}> @0xfilter8 </span>
-</a>
-{' '}▸
         </span>
         <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
           {[
@@ -629,6 +614,21 @@ export default function CC0Masters() {
             </a>
           ))}
         </div>
+               {' '}▸
+          <a href="https://cc-0mon-cards.vercel.app/" target="_blank" rel="noreferrer"
+  style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
+  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
+  CC0mon Cards by <a href="https://twitter.com/beastoshii" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @beastoshii </a>
+</a>
+{' '}▸
+<a href="https://twitter.com/0xfilter8" target="_blank" rel="noreferrer"
+  style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
+  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
+  Monomon by <span style={{color:'var(--lime)',marginLeft:2}}> @0xfilter8 </span>
+</a>
+{' '}▸
       </div>
 
       {/* ══ HEADER ══ */}

@@ -1,4 +1,4 @@
-import { list } from '@vercel/blob';
+import { list, get } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import type { LeaderboardData } from '@/lib/types';
 
@@ -13,11 +13,13 @@ export async function GET() {
       return NextResponse.json({ error: 'No leaderboard data yet. Trigger a scan first.' }, { status: 404 });
     }
 
-    const blob = blobs[0];
-    const res = await fetch(blob.url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Failed to fetch blob');
+    // Use get() which handles private blobs via token automatically
+    const blobResult = await get(blobs[0].url);
+    if (!blobResult) throw new Error('Blob not found');
 
-    const data: LeaderboardData = await res.json();
+    const text = await blobResult.text();
+    const data: LeaderboardData = JSON.parse(text);
+
     return NextResponse.json(data, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',

@@ -880,8 +880,8 @@ export default function CC0Masters() {
   gap: '8px'
 }}>
   <span style={{
-    fontFamily: 'Georgia, Times, Times New Roman, serif', // Classic serif font
-    fontSize: '17px',
+    fontFamily: 'var(--ff-pixel)',
+    fontSize: '16px',
     color: 'var(--bright)',
     letterSpacing: '1px'
   }}>
@@ -893,7 +893,7 @@ export default function CC0Masters() {
     rel="noreferrer"
     style={{
       fontFamily: 'var(--ff-pixel)',
-      fontSize: '16px',
+      fontSize: '14px',
       color: 'var(--lime)',
       textDecoration: 'none'
     }}

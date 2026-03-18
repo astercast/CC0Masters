@@ -439,3 +439,60 @@ body::after {
   background: rgba(124,232,50,0.08);
   box-shadow: 0 0 8px rgba(124,232,50,0.15);
 }
+
+/* ── Grid dot pattern for main content ── */
+main {
+  background-image: radial-gradient(circle, var(--green0) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: 0 0;
+}
+
+/* ── Stat card hover lift ── */
+.stat-card-wrap > div {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: default;
+}
+.stat-card-wrap > div:hover {
+  transform: translateY(-3px) scale(1.01);
+}
+
+/* ── Table zebra stripe ── */
+.lb-row:nth-child(even) {
+  background-color: rgba(255,255,255,0.012);
+}
+
+/* ── Glowing horizontal rule ── */
+.glow-rule {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green1) 20%, var(--lime) 50%, var(--green1) 80%, transparent);
+  margin: 0;
+}
+
+/* ── Ticker glow ── */
+.ticker-wrap {
+  box-shadow: 0 1px 0 var(--border), 0 -1px 0 var(--border), inset 0 0 30px rgba(0,0,0,0.3);
+}
+
+/* ── Podium card hover ── */
+.podium-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* ── Detail panel stat cell accent ── */
+.detail-panel > div:first-child > div {
+  transition: border-color 0.15s, background 0.15s;
+}
+.detail-panel > div:first-child > div:hover {
+  border-color: var(--green2) !important;
+  background: rgba(124,232,50,0.04) !important;
+}
+
+/* ── Species cell collected glow pulse ── */
+.species-cell.collected {
+  animation: cell-glow 4s ease-in-out infinite;
+}
+@keyframes cell-glow {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: inset 0 0 6px rgba(124,232,50,0.08); }
+}

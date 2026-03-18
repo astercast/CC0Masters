@@ -570,9 +570,19 @@ export default function CC0Masters() {
 
   // Ticker text
   const topEntry = data?.leaders?.[0];
+  const sep = '   ◆   ';
   const tickerText = topEntry
-    ? `LEADER: ${topEntry.address.slice(0,8)}... — ${topEntry.collected}/${TOTAL_SPECIES} SPECIES — ${topEntry.progress} COMPLETE   ·   TOTAL COLLECTORS: ${data?.totalOwners?.toLocaleString()}   ·   FULL DEX HOLDERS: ${completeCount}   ·   CC0MON ERC-721 · ETHEREUM MAINNET   ·   `
-    : '·  CC0MASTERS  ·  LIVE COLLECTOR LEADERBOARD  ·  ETHEREUM MAINNET  ·  ERC-721  ·  CC0  ·  ';
+    ? [
+        `▶ LEADER: ${topEntry.address.slice(0,6)}…${topEntry.address.slice(-4)}`,
+        `${topEntry.collected}/${TOTAL_SPECIES} SPECIES`,
+        `${topEntry.progress} COMPLETE`,
+        `${(data?.totalOwners??0).toLocaleString()} TOTAL COLLECTORS`,
+        `${completeCount} FULL DEX HOLDERS`,
+        `CC0MON ERC-721`,
+        `ETHEREUM MAINNET`,
+        `AUTO-UPDATES HOURLY`,
+      ].join(sep) + sep
+    : ['CC0MASTERS','LIVE COLLECTOR LEADERBOARD','ETHEREUM MAINNET','ERC-721','CC0','WHO WILL COLLECT THEM ALL'].join(sep) + sep;
 
   return (
     <div style={{background:'var(--black)',color:'var(--text)',minHeight:'100vh',fontFamily:'var(--ff-mono)'}}>
@@ -658,7 +668,7 @@ export default function CC0Masters() {
           </div>
 
           {/* Stats */}
-          <div style={{display:'flex',gap:8,flexWrap:'wrap',animation:'fadeUp 0.5s ease 80ms both'}}>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',animation:'fadeUp 0.5s ease 80ms both'}}>
             {([
               {label:'COLLECTORS',value:data?.totalOwners??liveOwners,color:'var(--lime)',icon:'◈'},
               {label:'SPECIES',value:TOTAL_SPECIES,color:'var(--bright)',icon:'◉'},
@@ -666,19 +676,32 @@ export default function CC0Masters() {
               {label:'ON-CHAIN',value:TOTAL_TOKENS,color:'var(--cyan)',icon:'⬡'},
             ]).map(({label,value,color,icon})=>(
               <div key={label} style={{
-                background:'linear-gradient(135deg,var(--bg3) 0%,var(--panel) 100%)',
-                border:`1px solid ${color}30`,padding:'12px 16px',
-                position:'relative',overflow:'hidden',minWidth:88,
-                boxShadow:`0 0 20px ${color}08, inset 0 1px 0 ${color}15`}}>
+                background:'linear-gradient(160deg,var(--bg3) 0%,var(--panel) 100%)',
+                border:`1px solid ${color}25`,
+                padding:'14px 18px 12px',
+                position:'relative',
+                minWidth:96,
+                boxShadow:`0 4px 24px ${color}06, inset 0 1px 0 ${color}20`}}>
+                {/* top accent line */}
                 <div style={{position:'absolute',top:0,left:0,right:0,height:2,
-                  background:`linear-gradient(90deg,transparent,${color}60,transparent)`}}/>
-                <div style={{position:'absolute',bottom:-8,right:-4,fontFamily:'var(--ff-pixel)',fontSize:28,
-                  color:`${color}10`,lineHeight:1,pointerEvents:'none',userSelect:'none'}}>{icon}</div>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:20,color,lineHeight:1,marginBottom:4,
-                  textShadow:color!=='var(--text2)'?`0 0 14px ${color}80`:'none',letterSpacing:-1}}>
+                  background:`linear-gradient(90deg,transparent,${color}80,transparent)`}}/>
+                {/* bottom accent line */}
+                <div style={{position:'absolute',bottom:0,left:0,right:0,height:1,
+                  background:`linear-gradient(90deg,transparent,${color}20,transparent)`}}/>
+                {/* corner icon — contained, not clipping */}
+                <div style={{
+                  position:'absolute',top:8,right:10,
+                  fontFamily:'var(--ff-pixel)',fontSize:16,
+                  color:`${color}20`,lineHeight:1,
+                  pointerEvents:'none',userSelect:'none'}}>{icon}</div>
+                {/* value */}
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:22,color,lineHeight:1,marginBottom:6,
+                  textShadow:color!=='var(--text2)'?`0 0 16px ${color}90`:'none',letterSpacing:-1}}>
                   {value>0?<AnimatedNumber value={value}/>:'--'}
                 </div>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1.5}}>{label}</div>
+                {/* label */}
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',letterSpacing:2,
+                  textTransform:'uppercase'}}>{label}</div>
               </div>
             ))}
           </div>
@@ -741,7 +764,16 @@ export default function CC0Masters() {
         {/* PODIUM */}
         {!loading&&!error&&sorted.length>=3&&(
           <section style={{marginBottom:24}}>
-            <div className="section-label" style={{marginBottom:14}}>CHAMPION PODIUM</div>
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--lime)',letterSpacing:3,
+                textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
+                <span style={{color:'var(--green2)',fontSize:7}}>▶</span> CHAMPION PODIUM
+              </div>
+              <div style={{flex:1,height:1,background:'linear-gradient(90deg,var(--green1),transparent)'}}/>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text3)',letterSpacing:1}}>
+                {(data?.leaders?.length??0).toLocaleString()} TOTAL COLLECTORS
+              </div>
+            </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1.1fr 1fr',gap:8,alignItems:'end',marginBottom:8}}>
               <PodiumCard entry={sorted[1]} rank={2} onClick={()=>setOpenRow(openRow===sorted[1].address?null:sorted[1].address)} isOpen={openRow===sorted[1].address}/>
               <PodiumCard entry={sorted[0]} rank={1} onClick={()=>setOpenRow(openRow===sorted[0].address?null:sorted[0].address)} isOpen={openRow===sorted[0].address}/>
@@ -773,7 +805,13 @@ export default function CC0Masters() {
 
         {/* RANKINGS TABLE */}
         <section>
-          <div className="section-label" style={{marginBottom:12}}>FULL RANKINGS</div>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--lime)',letterSpacing:3,
+              textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
+              <span style={{color:'var(--green2)',fontSize:7}}>▶</span> FULL RANKINGS
+            </div>
+            <div style={{flex:1,height:1,background:'linear-gradient(90deg,var(--green1),transparent)'}}/>
+          </div>
 
           {loading?(
             <div className="px-border" style={{background:'var(--panel)',overflow:'hidden'}}>

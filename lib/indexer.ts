@@ -109,12 +109,21 @@ export async function saveLeaderboard(data: LeaderboardData) {
 /* ── Load from private blob ── */
 export async function loadLeaderboard(): Promise<LeaderboardData | null> {
   try {
-    const blobMeta = await get(BLOB_KEY, { access: 'private' });
-    if (!blobMeta) return null;
-    // get() returns a BlobObject with a downloadUrl — fetch it directly
-    const res = await fetch((blobMeta as unknown as { downloadUrl: string }).downloadUrl);
-    if (!res.ok) return null;
-    return await res.json();
+    const result = await get(BLOB_KEY, { access: 'private' });
+    if (!result || !result.stream) return null;
+    // Read the stream directly — this is the blob content
+    const reader = result.stream.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    const total = chunks.reduce((a, c) => a + c.length, 0);
+    const merged = new Uint8Array(total);
+    let off = 0;
+    for (const c of chunks) { merged.set(c, off); off += c.length; }
+    return JSON.parse(new TextDecoder().decode(merged));
   } catch { return null; }
 }
 

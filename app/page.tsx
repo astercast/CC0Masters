@@ -20,6 +20,12 @@ function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 function pad32(hex: string) { return hex.padStart(64,'0'); }
 function pad32hex(hex: string) { return hex.padStart(64,'0'); }
 
+/* ── Module-level toast ── fires from any component without prop drilling ── */
+let _toastSetter: ((url: string|null)=>void) | null = null;
+function fireToast(url: string) {
+  _toastSetter?.(url);
+}
+
 /* ── ENS cache ── */
 const ensCache = new Map<string, string | null>();
 async function resolveENS(address: string): Promise<string | null> {
@@ -33,13 +39,18 @@ async function resolveENS(address: string): Promise<string | null> {
   } catch { ensCache.set(key, null); return null; }
 }
 
-function AddressDisplay({ address, onNotify }: { address: string; onNotify?: ()=>void }) {
+function AddressDisplay({ address }: { address: string }) {
   const [ens, setEns] = useState<string | null>(ensCache.get(address.toLowerCase()) ?? null);
   useEffect(() => { if (ens !== null) return; resolveENS(address).then(setEns); }, [address, ens]);
   const display = ens ?? (address.slice(0,6) + '…' + address.slice(-4));
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fireToast(`https://opensea.io/${address}`);
+  };
   return (
     <a href={`https://opensea.io/${address}`} target="_blank" rel="noreferrer"
-      onClick={e=>{ e.stopPropagation(); onNotify?.(); }} title={address}
+      onClick={handleClick} title={address}
       style={{ fontFamily:'var(--ff-mono)', fontSize:16,
         color: ens ? 'var(--bright)' : 'var(--text)',
         textDecoration:'none',
@@ -408,12 +419,12 @@ function SkeletonRow({ mobile }: { mobile: boolean }) {
 }
 
 function DetailPanel({
-  entry, images, registryData, onNotify,
+  entry, images, registryData
 }: {
   entry: LeaderboardEntry;
   images: Record<string,{svg:string;png:string;name:string}>;
   registryData: Record<string,{name:string;energy:string}>;
-  onNotify?: ()=>void;
+ 
 }) {
   const [tab, setTab] = useState<'energy'|'dex'>('dex');
 
@@ -421,7 +432,9 @@ function DetailPanel({
     const collected = new Set(entry.collectedSpeciesNums??[]);
     return Array.from({length:TOTAL_SPECIES},(_,i)=>{
       const num=String(i+1);
-      return {number:num,name:registryData[num]?.name??`#${num}`,collected:collected.has(i+1)};
+      // Use registryData first, fall back to images (same source, loaded together)
+      const rname = registryData[num]?.name || images[num]?.name;
+      return {number:num, name:rname&&rname.length>0?rname:`#${num}`, collected:collected.has(i+1)};
     });
   })();
 
@@ -442,7 +455,7 @@ function DetailPanel({
           </div>
         ))}
         <a href={`https://opensea.io/${entry.address}`} target="_blank" rel="noreferrer"
-          onClick={()=>onNotify?.()}
+          onClick={e=>{ e.preventDefault(); fireToast(`https://opensea.io/${entry.address}`); }}
           style={{background:'var(--bg2)',border:'1px solid var(--border)',padding:'10px 12px',textDecoration:'none',
             display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',
             color:'var(--text2)',fontSize:14,fontFamily:'var(--ff-pixel)',letterSpacing:1,gap:4,transition:'all 0.1s'}}
@@ -495,16 +508,20 @@ function DetailPanel({
             const imgData = images[sp.number];
             const src = imgData?.png || imgData?.svg || '';
             return (
-              <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}>
+              <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}
+                title={`#${sp.number}${sp.name&&!sp.name.startsWith('#')?' — '+sp.name:''}`}>
                 {sp.collected&&(
                   <div style={{position:'absolute',top:2,right:3,fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--lime)'}}>✓</div>
                 )}
                 <Sprite src={src} name={sp.name} size={52} dimmed={!sp.collected}/>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,
-                  color:sp.collected?'var(--text)':'var(--text3)',lineHeight:1.6,marginTop:2,
-                  overflow:'hidden',display:'-webkit-box' as 'flex',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as 'vertical',
-                  wordBreak:'break-word'}}>
-                  {sp.name}
+                <div style={{
+                  fontFamily:'var(--ff-pixel)',
+                  fontSize:'clamp(6px,1.2vw,10px)',
+                  color:sp.collected?'var(--text)':'var(--text3)',
+                  lineHeight:1.4,marginTop:2,
+                  whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',
+                  width:'100%',textAlign:'center'}}>
+                  {sp.name&&!sp.name.startsWith('#')?sp.name:`#${sp.number}`}
                 </div>
               </div>
             );
@@ -530,11 +547,8 @@ function useMobile() {
 
 export default function CC0Masters() {
   const mobile = useMobile();
-  const [toast,setToast] = useState<string|null>(null);
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(()=>setToast(null), 2200);
-  };
+  const [confirm,setConfirm] = useState<string|null>(null); // holds pending URL
+  useEffect(()=>{ _toastSetter = (url)=>setConfirm(url); return()=>{ _toastSetter=null; }; },[]);
   const [data,setData]                   = useState<LeaderboardData|null>(null);
   const [loading,setLoading]             = useState(true);
   const [error,setError]                 = useState<string|null>(null);
@@ -689,17 +703,54 @@ export default function CC0Masters() {
         animation:'scanline 8s linear infinite',opacity:0.7}}/>
 
       {/* Toast notification */}
-      {toast&&(
+      {confirm&&(
         <div style={{
-          position:'fixed',bottom:28,left:'50%',transform:'translateX(-50%)',
-          zIndex:99999,pointerEvents:'none',
-          background:'var(--panel)',border:'1px solid var(--lime)',
-          boxShadow:'0 0 24px rgba(124,232,50,0.3), 0 4px 16px rgba(0,0,0,0.6)',
-          padding:'10px 20px',display:'flex',alignItems:'center',gap:10,
-          animation:'fadeUp 0.2s ease both',
-        }}>
-          <span style={{fontSize:20}}>🌊</span>
-          <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--lime)',letterSpacing:1}}>{toast}</span>
+          position:'fixed',inset:0,zIndex:99999,
+          background:'rgba(0,0,0,0.75)',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          animation:'fadeIn 0.15s ease both',
+        }} onClick={()=>setConfirm(null)}>
+          <div style={{
+            background:'var(--bg2)',border:'2px solid var(--green2)',
+            boxShadow:'0 0 40px rgba(124,232,50,0.2), 0 8px 32px rgba(0,0,0,0.8)',
+            padding:'28px 32px',maxWidth:360,width:'90%',
+            animation:'fadeUp 0.2s ease both',
+            position:'relative',
+          }} onClick={e=>e.stopPropagation()}>
+            {/* corner brackets */}
+            {[[0,0,'top','left'],[0,0,'top','right'],[0,0,'bottom','left'],[0,0,'bottom','right']].map((_,i)=>(
+              <div key={i} style={{position:'absolute',
+                top:i<2?6:undefined,bottom:i>=2?6:undefined,
+                left:i%2===0?6:undefined,right:i%2===1?6:undefined,
+                width:10,height:10,
+                borderTop:i<2?'2px solid var(--lime)':undefined,
+                borderBottom:i>=2?'2px solid var(--lime)':undefined,
+                borderLeft:i%2===0?'2px solid var(--lime)':undefined,
+                borderRight:i%2===1?'2px solid var(--lime)':undefined,
+              }}/>
+            ))}
+            <div style={{textAlign:'center',marginBottom:20}}>
+              <div style={{fontSize:32,marginBottom:10}}>🌊</div>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--bright)',letterSpacing:2,marginBottom:8}}>
+                OPENING OPENSEA
+              </div>
+              <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--text2)',wordBreak:'break-all',
+                background:'var(--bg)',border:'1px solid var(--border)',padding:'6px 10px',
+                letterSpacing:0.5}}>
+                {confirm}
+              </div>
+            </div>
+            <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+              <button className="btn btn-primary" onClick={()=>{ window.open(confirm,'_blank','noopener'); setConfirm(null); }}
+                style={{flex:1,justifyContent:'center',letterSpacing:2}}>
+                ✓ CONFIRM
+              </button>
+              <button className="btn btn-danger" onClick={()=>setConfirm(null)}
+                style={{flex:1,justifyContent:'center',letterSpacing:2}}>
+                ✕ CANCEL
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -980,7 +1031,7 @@ export default function CC0Masters() {
                               {i+1}
                             </div>
                           </td>
-                          <td><AddressDisplay address={entry.address} onNotify={()=>showToast('Opening OpenSea…')}/></td>
+                          <td><AddressDisplay address={entry.address}/></td>
                           <td>
                             <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
                               textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
@@ -1004,7 +1055,7 @@ export default function CC0Masters() {
                           </td>
                         </tr>,
                         isOpen&&<tr key={`${entry.address}-d`}><td colSpan={mobile?5:8} style={{padding:0}}>
-                          <DetailPanel entry={entry} images={images} registryData={registryData} onNotify={()=>showToast('Opening OpenSea…')}/>
+                          <DetailPanel entry={entry} images={images} registryData={registryData}/>
                         </td></tr>,
                       ];
                     })}

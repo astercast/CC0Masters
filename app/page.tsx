@@ -845,7 +845,8 @@ export default function CC0Masters() {
           </div>
 
           {/* Actions (right side) */}
-          <div style={{marginLeft:mobile?0:'auto',width:mobile?'100%':undefined,display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both'}}>
+          <div style={{marginLeft:mobile?0:'auto',width:mobile?'100%':undefined,display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both',flexWrap:'wrap'}}>
+            {!mobile&&<button className="btn" onClick={()=>router.push('/library')} style={{letterSpacing:1}}>📖 CC0MON LIBRARY</button>}
             <button className="btn btn-primary" onClick={fetchLeaderboard} disabled={scanning||loading}
               style={{position:'relative',overflow:'hidden'}}>
               {loading?'↺ LOADING…':'↺ REFRESH'}
@@ -1051,7 +1052,7 @@ export default function CC0Masters() {
                           </td>
                         </tr>,
                         isOpen&&<tr key={`${entry.address}-d`}><td colSpan={mobile?5:8} style={{padding:0}}>
-                          <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/pokedex?species=${n}`)}/>
+                          <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
                         </td></tr>,
                       ];
                     })}

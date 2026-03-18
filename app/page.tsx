@@ -575,7 +575,7 @@ export default function CC0Masters() {
 
   useEffect(()=>{
     // Fetch registry images — contains { svg, png } per species number
-    fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()).then(d=>{
+    fetch('/api/registry').then(r=>r.json()).then(d=>{
       const imgs: Record<string,{svg:string;png:string;name:string}> = {};
       const rd: Record<string,{name:string;energy:string}> = {};
       for (const [k,v] of Object.entries(d.images||{})) {

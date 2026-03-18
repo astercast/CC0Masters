@@ -14,6 +14,7 @@ const RC: Record<string,string> = {
   Common:'#6a8a60', Uncommon:'#7ee832', Rare:'#40b0ff', Epic:'#c080ff', Legendary:'#ffd040',
 };
 const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary'];
+const RARITY_SORT_ORDER: Record<string,number> = { Legendary:0, Epic:1, Rare:2, Uncommon:3, Common:4 };
 
 // Approximate supply by rarity tier (9999 total / 260 species * rarity factor)
 const SUPPLY_EST: Record<string,number> = {
@@ -146,7 +147,7 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
 
   useEffect(()=>{
     setDesc(''); setSales([]); setSalesLoading(true);
-    fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()).then(d=>{
+    fetch('/api/registry').then(r=>r.json()).then(d=>{
       const tid=d.images?.[String(sp.number)]?.tokenId;
       if (!tid) { setSalesLoading(false); return; }
       // description
@@ -420,7 +421,7 @@ function LibraryInner() {
   const [search,setSearch]=useState('');
   const [filterEnergy,setFilterEnergy]=useState('');
   const [filterRarity,setFilterRarity]=useState('');
-  const [sortBy,setSortBy]=useState<'number'|'holders'>('number');
+  const [sortBy,setSortBy]=useState<'number'|'holders'|'rarity'>('number');
   const [holderMap,setHolderMap]=useState<Record<number,{address:string;totalHeld:number}[]>>({});
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
@@ -440,7 +441,7 @@ function LibraryInner() {
   useEffect(()=>{
     Promise.all([
       fetch('https://api.cc0mon.com/registry').then(r=>r.json()),
-      fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()),
+      fetch('/api/registry').then(r=>r.json()),
     ]).then(([reg,imgs])=>{
       const imgMap=imgs.images||{};
       setSpecies((reg.cc0mon||[]).map((s:any)=>({
@@ -480,6 +481,7 @@ function LibraryInner() {
     return true;
   }).slice().sort((a,b)=>{
     if (sortBy==='holders') return (holderMap[b.number]?.length??0)-(holderMap[a.number]?.length??0);
+    if (sortBy==='rarity') return (RARITY_SORT_ORDER[a.rarity]??5)-(RARITY_SORT_ORDER[b.rarity]??5);
     return a.number-b.number;
   });
 
@@ -602,6 +604,10 @@ function LibraryInner() {
             <button className={`btn btn-filter${sortBy==='holders'?' active':''}`}
               onClick={()=>setSortBy('holders')} style={{fontSize:9,letterSpacing:1,padding:'5px 8px'}}>
               ◈ HOLDERS
+            </button>
+            <button className={`btn btn-filter${sortBy==='rarity'?' active':''}`}
+              onClick={()=>setSortBy('rarity')} style={{fontSize:9,letterSpacing:1,padding:'5px 8px'}}>
+              ★ RARITY
             </button>
           </div>
           <div style={{display:'flex',gap:4,marginLeft:4}}>

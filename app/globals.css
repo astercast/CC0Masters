@@ -45,7 +45,9 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--black);
+  background:
+    linear-gradient(rgba(3,6,3,0.93), rgba(3,6,3,0.93)),
+    url('/bg.png') center center / cover fixed;
   color: var(--text);
   font-family: var(--ff-mono);
   font-size: 14px;

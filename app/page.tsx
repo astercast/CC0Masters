@@ -262,13 +262,20 @@ function EnergyDots({ byEnergy }: { byEnergy: LeaderboardEntry['byEnergy'] }) {
   </div>;
 }
 
+/* Proxy CC0mon images through our CDN cache for persistent caching across refreshes */
+function proxyUrl(src: string): string {
+  if (!src || !src.startsWith('https://api.cc0mon.com/')) return src;
+  return '/api/sprite?url=' + encodeURIComponent(src);
+}
+
 /* Session-level cache — survives React remounts within a page session */
 const loadedUrls = new Set<string>();
 
 function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string; name:string; size?:number; dimmed?:boolean; className?:string }) {
   // If we've already loaded this URL this session, start as 'ok' immediately — no shimmer
+  const proxied = proxyUrl(src);
   const [status, setStatus] = useState<'loading'|'ok'|'err'>(
-    !src ? 'err' : loadedUrls.has(src) ? 'ok' : 'loading'
+    !src ? 'err' : loadedUrls.has(proxied) ? 'ok' : 'loading'
   );
 
   if (!src) return (
@@ -282,9 +289,9 @@ function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string
       {status==='loading'&&<div className="skeleton" style={{position:'absolute',inset:0}}/>}
       {status==='err'&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
         justifyContent:'center',fontSize:size*0.3,color:'var(--text3)',opacity:dimmed?0.15:0.4}}>?</div>}
-      <img src={src} alt={name} width={size} height={size}
+      <img src={proxied} alt={name} width={size} height={size}
         loading="eager" decoding="async"
-        onLoad={()=>{ loadedUrls.add(src); setStatus('ok'); }}
+        onLoad={()=>{ loadedUrls.add(proxied); setStatus('ok'); }}
         onError={()=>setStatus('err')}
         style={{imageRendering:'pixelated',display:'block',
           opacity:status==='ok'?(dimmed?0.18:1):0,
@@ -1183,22 +1190,23 @@ export default function CC0Masters() {
 
         {/* Community tools */}
         <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid var(--border)',
-          display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-          <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
-            ▶ OTHER COMMUNITY TOOLS BY{' '}
+          display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:1,lineHeight:1.8}}>
+            ▶{' '}
+            <a href="https://cc0mon-community.netlify.app/" target="_blank" rel="noreferrer"
+              style={{color:'var(--bright)',textDecoration:'none'}}
+              onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+              onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
+              CHECK OUT OTHER TOOLS ON OUR COMMUNITY PAGE
+            </a>
+            {' '}BY{' '}
             <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
               style={{color:'var(--lime)',textDecoration:'none'}}
               onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
               onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}>
               @SPELL_WEB3
             </a>
-            {':'}
           </span>
-          <a href="https://cc0mon-community.netlify.app/" target="_blank" rel="noreferrer"
-            className="btn btn-filter"
-            style={{fontSize:11,textDecoration:'none',padding:'4px 10px'}}>
-            🌐 COMMUNITY
-          </a>
         </div>
 
         {/* Hidden admin section */}

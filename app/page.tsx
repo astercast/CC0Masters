@@ -307,38 +307,48 @@ function PodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; 
   return (
     <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}`}
       style={{animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`}}>
+      {/* ambient glow background */}
+      <div style={{position:'absolute',inset:0,
+        background:`radial-gradient(ellipse at 50% 0%,${COLORS[rank]}12 0%,transparent 65%)`,
+        pointerEvents:'none',zIndex:0}}/>
       {/* corner decorations */}
-      <div style={{position:'absolute',top:4,left:4,width:8,height:8,borderTop:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
-      <div style={{position:'absolute',top:4,right:4,width:8,height:8,borderTop:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
-      <div style={{position:'absolute',bottom:4,left:4,width:8,height:8,borderBottom:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
-      <div style={{position:'absolute',bottom:4,right:4,width:8,height:8,borderBottom:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
+      <div style={{position:'absolute',top:5,left:5,width:10,height:10,borderTop:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
+      <div style={{position:'absolute',top:5,right:5,width:10,height:10,borderTop:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
+      <div style={{position:'absolute',bottom:5,left:5,width:10,height:10,borderBottom:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
+      <div style={{position:'absolute',bottom:5,right:5,width:10,height:10,borderBottom:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
 
       <div style={{position:'relative',zIndex:2,textAlign:'center',padding:'4px 0'}}>
         {/* rank label */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:COLORS[rank],letterSpacing:2,marginBottom:8,opacity:0.7}}>{LABELS[rank]}</div>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:COLORS[rank],letterSpacing:3,marginBottom:10,
+          textShadow:`0 0 8px ${COLORS[rank]}80`}}>{LABELS[rank]}</div>
 
         {/* medal */}
-        <div style={{fontSize:rank===1?40:28,animation:'float 3.5s ease-in-out infinite',lineHeight:1,marginBottom:10,
-          filter:`drop-shadow(0 0 8px ${COLORS[rank]}60)`}}>{MEDALS[rank]}</div>
+        <div style={{fontSize:rank===1?48:32,animation:'float 3.5s ease-in-out infinite',lineHeight:1,marginBottom:12,
+          filter:`drop-shadow(0 0 12px ${COLORS[rank]}80) drop-shadow(0 4px 8px rgba(0,0,0,0.5))`}}>{MEDALS[rank]}</div>
 
         {/* address */}
-        <div style={{marginBottom:10,minHeight:20}}><AddressDisplay address={entry.address}/></div>
+        <div style={{marginBottom:12,minHeight:20,padding:'6px 8px',
+          background:`linear-gradient(90deg,transparent,${COLORS[rank]}08,transparent)`,
+          borderTop:`1px solid ${COLORS[rank]}20`,borderBottom:`1px solid ${COLORS[rank]}20`}}>
+          <AddressDisplay address={entry.address}/>
+        </div>
 
         {/* big number */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:rank===1?28:20,color:COLORS[rank],
-          textShadow:`0 0 12px ${COLORS[rank]}, 0 0 24px ${COLORS[rank]}60`,
-          lineHeight:1,marginBottom:4}}>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:rank===1?36:24,color:COLORS[rank],
+          textShadow:`0 0 16px ${COLORS[rank]}, 0 0 32px ${COLORS[rank]}60, 0 0 48px ${COLORS[rank]}30`,
+          lineHeight:1,marginBottom:2,letterSpacing:-1}}>
           {entry.collected}
-          <span style={{fontSize:rank===1?10:8,color:'var(--text2)',marginLeft:6}}>/{TOTAL_SPECIES}</span>
+          <span style={{fontSize:rank===1?12:9,color:'var(--text3)',marginLeft:5}}>/{TOTAL_SPECIES}</span>
         </div>
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1,marginBottom:10}}>SPECIES</div>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text3)',letterSpacing:2,marginBottom:12}}>SPECIES</div>
 
-        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={rank===1?7:5}/>
+        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={rank===1?8:6}/>
 
-        <div style={{marginTop:8,fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1}}>
-          <span style={{color:COLORS[rank]}}>{entry.progress}</span>
-          <span style={{margin:'0 6px',color:'var(--border2)'}}>·</span>
-          <span>{entry.totalTokensHeld} TOKENS</span>
+        <div style={{marginTop:10,fontFamily:'var(--ff-pixel)',fontSize:5.5,letterSpacing:1,
+          display:'flex',justifyContent:'center',gap:10}}>
+          <span style={{color:COLORS[rank],textShadow:`0 0 6px ${COLORS[rank]}60`}}>{entry.progress}</span>
+          <span style={{color:'var(--border2)'}}>·</span>
+          <span style={{color:'var(--text3)'}}>{entry.totalTokensHeld} TOKENS</span>
         </div>
       </div>
     </div>
@@ -474,74 +484,57 @@ export default function CC0Masters() {
   const [scanPct,setScanPct]             = useState(0);
   const [scanDetail,setScanDetail]       = useState('');
   const [liveOwners,setLiveOwners]       = useState(0);
+  const [lastRefreshed,setLastRefreshed] = useState<Date|null>(null);
+  const [nextRefreshIn,setNextRefreshIn] = useState(300);
   const scanAbort = useRef(false);
 
   const fetchLeaderboard = useCallback(async()=>{
-  setLoading(true); setError(null);
-  try {
-    const res=await fetch('/api/leaderboard');
-    if (!res.ok) { setError('no_data'); return; }
-    let leaderboard = await res.json();
-    // TEMPORARY OVERRIDE: Force top holder to show 260 species
-    if (leaderboard && leaderboard.leaders && Array.isArray(leaderboard.leaders)) {
-      leaderboard.leaders = leaderboard.leaders.map((entry:any) => {
-        if (entry.address?.toLowerCase() === '0x1ea0fca88df648041acda284014fe2a84f78dd26') {
-          return {
-            ...entry,
-            collected: 260,
-            missing: 0,
-            progress: '100.0%',
-            checklist: entry.checklist ? entry.checklist.map((sp:any) => ({...sp, collected: true})) : entry.checklist,
-            collectedSpeciesNums: Array.from({length:260},(_,i)=>i+1),
-          };
-        }
-        return entry;
-      });
-    }
-    setData(leaderboard);
-  } catch { setError('fetch_failed'); }
-  finally { setLoading(false); }
-},[]);
+    setLoading(true); setError(null);
+    try {
+      const res=await fetch('/api/leaderboard');
+      if (!res.ok) { setError('no_data'); return; }
+      setData(await res.json());
+      setLastRefreshed(new Date());
+      setNextRefreshIn(300);
+    } catch { setError('fetch_failed'); }
+    finally { setLoading(false); }
+  },[]);
 
- useEffect(()=>{
-  fetchLeaderboard();
-  // Fetch registry images — contains { svg, png } per species number
-  fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()).then(d=>{
-    const imgs: Record<string,{svg:string;png:string;name:string}> = {};
-    const rd: Record<string,{name:string;energy:string}> = {};
-    for (const [k,v] of Object.entries(d.images||{})) {
-      const e=v as {name:string;svg:string;png:string};
-      imgs[k]={svg:e.svg,png:e.png,name:e.name};
-      rd[k]={name:e.name,energy:''};
-    }
-    // Diagnostic: log missing images for species 1-260
-    const missingImages: string[] = [];
-    for (let i = 1; i <= 260; i++) {
-      if (!imgs[String(i)]) missingImages.push(String(i));
-    }
-    if (missingImages.length > 0) {
-      // eslint-disable-next-line no-console
-      console.warn('Missing images for species:', missingImages);
-    }
-    setImages(imgs);
-    setRegistryData(rd);
-  }).catch(()=>{});
-  fetch('https://api.cc0mon.com/registry').then(r=>r.json()).then(d=>{
-    const rd:Record<string,{name:string;energy:string}>={};
-    for (const sp of (d.cc0mon||[])) rd[String(sp.number)]={name:sp.name,energy:sp.energy};
-    // Diagnostic: log missing registry entries for species 1-260
-    const missingRegistry: string[] = [];
-    for (let i = 1; i <= 260; i++) {
-      if (!rd[String(i)]) missingRegistry.push(String(i));
-    }
-    if (missingRegistry.length > 0) {
-      // eslint-disable-next-line no-console
-      console.warn('Missing registry entries for species:', missingRegistry);
-    }
-    setRegistryData(prev=>{ const n={...prev}; for(const [k,v] of Object.entries(rd)) n[k]={...n[k],...v}; return n; });
-  }).catch(()=>{});
-},[fetchLeaderboard]);
-  
+  // Auto-refresh: poll every 5 min and on tab focus
+  useEffect(()=>{
+    fetchLeaderboard();
+    const interval = setInterval(fetchLeaderboard, 5 * 60 * 1000);
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchLeaderboard(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible); };
+  }, [fetchLeaderboard]);
+
+  // Countdown to next refresh
+  useEffect(()=>{
+    const t = setInterval(()=>setNextRefreshIn(n=>Math.max(0,n-1)),1000);
+    return()=>clearInterval(t);
+  },[]);
+
+  useEffect(()=>{
+    // Fetch registry images — contains { svg, png } per species number
+    fetch('https://api.cc0mon.com/registry/images').then(r=>r.json()).then(d=>{
+      const imgs: Record<string,{svg:string;png:string;name:string}> = {};
+      const rd: Record<string,{name:string;energy:string}> = {};
+      for (const [k,v] of Object.entries(d.images||{})) {
+        const e=v as {name:string;svg:string;png:string};
+        imgs[k]={svg:e.svg,png:e.png,name:e.name};
+        rd[k]={name:e.name,energy:''};
+      }
+      setImages(imgs);
+      setRegistryData(rd);
+    }).catch(()=>{});
+    fetch('https://api.cc0mon.com/registry').then(r=>r.json()).then(d=>{
+      const rd:Record<string,{name:string;energy:string}>={};
+      for (const sp of (d.cc0mon||[])) rd[String(sp.number)]={name:sp.name,energy:sp.energy};
+      setRegistryData(prev=>{ const n={...prev}; for(const [k,v] of Object.entries(rd)) n[k]={...n[k],...v}; return n; });
+    }).catch(()=>{});
+  },[]);
+
   const startScan = async()=>{
     if (!isAdmin) {
       const pw=prompt('Admin password:');
@@ -591,45 +584,25 @@ export default function CC0Masters() {
 
       {/* ══ COMMUNITY BANNER ══ */}
       <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:'7px 24px',
-        display:'flex',alignItems:'center',gap:16,flexWrap:'wrap',justifyContent:'center'}}>
-        <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
-          ▶ CHECK OUT SITES BY{' '}
+        display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',justifyContent:'center'}}>
+        <span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
+          ▶ CHECK OUT OTHER COMMUNITY TOOLS HERE ▸
+        </span>
+        <span style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
+          BY{' '}
           <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
             style={{color:'var(--lime)',textDecoration:'none',letterSpacing:1}}
             onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
             onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}>
             @SPELL_WEB3
           </a>
+          {':'}
         </span>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
-          {[
-            ['🌐 COMMUNITY','https://cc0mon-community.netlify.app/'],
-            ['📖 DEX','https://cc0dex.netlify.app/'],
-            ['🔲 GRID','https://cc0mon-grid.netlify.app/'],
-          ].map(([label,href])=>(
-            <a key={label} href={href} target="_blank" rel="noreferrer"
-              className="btn btn-filter"
-              style={{fontFamily:'var(--ff-pixel)',fontSize:8,letterSpacing:1,textDecoration:'none',padding:'5px 12px'}}>
-              {label}
-            </a>
-          ))}
-        </div>
-               <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
-  <a href="https://cc-0mon-cards.vercel.app/" target="_blank" rel="noreferrer"
-    style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
-    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
-    CC0mon Cards by <a href="https://twitter.com/beastoshii" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @beastoshii </a>
-  </a>
-  {' '}▸
-  <a href="https://monomons.vercel.app/" target="_blank" rel="noreferrer"
-    style={{color:'var(--bright)',textDecoration:'none',letterSpacing:1,marginLeft:8}}
-    onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-    onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--bright)'}>
-    Monomon by <a href="https://twitter.com/0xfilter8" target="_blank" rel="noreferrer" style={{color:'var(--lime)',textDecoration:'none',marginLeft:2}}> @0xfilter8 </a>
-  </a>
-  {' '}▸
-</span>
+        <a href="https://cc0mon-community.netlify.app/" target="_blank" rel="noreferrer"
+          className="btn btn-filter"
+          style={{fontFamily:'var(--ff-pixel)',fontSize:8,letterSpacing:1,textDecoration:'none',padding:'5px 12px'}}>
+          🌐 COMMUNITY
+        </a>
       </div>
 
       {/* ══ HEADER ══ */}
@@ -641,10 +614,15 @@ export default function CC0Masters() {
           <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:2}}>
             <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721 · CC0 · {data?.scannedBlock?`BLOCK #${data.scannedBlock.toLocaleString()}`:'LIVE'}
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div style={{width:6,height:6,background:'var(--lime)',borderRadius:0,
-              boxShadow:'0 0 6px var(--lime)',animation:'pulse 2s step-end infinite'}}/>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
+          <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+            <span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1}}>
+              NEXT UPDATE: <span style={{color:'var(--text2)'}}>{Math.floor(nextRefreshIn/60)}:{String(nextRefreshIn%60).padStart(2,'0')}</span>
+            </span>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <div style={{width:7,height:7,background:'var(--lime)',borderRadius:0,
+                boxShadow:'0 0 8px var(--lime), 0 0 16px rgba(124,232,50,0.4)',animation:'pulse 1.5s ease-in-out infinite'}}/>
+              <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
+            </div>
           </div>
         </div>
 
@@ -680,36 +658,46 @@ export default function CC0Masters() {
           </div>
 
           {/* Stats */}
-          <div style={{display:'flex',gap:10,flexWrap:'wrap',animation:'fadeUp 0.5s ease 80ms both'}}>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',animation:'fadeUp 0.5s ease 80ms both'}}>
             {([
-              {label:'COLLECTORS',value:data?.totalOwners??liveOwners,color:'var(--lime)'},
-              {label:'SPECIES',value:TOTAL_SPECIES,color:'var(--bright)'},
-              {label:'FULL DEX',value:completeCount,color:'var(--gold)'},
-              {label:'ON-CHAIN',value:TOTAL_TOKENS,color:'var(--text2)'},
-            ]).map(({label,value,color})=>(
-              <div key={label} style={{background:'var(--bg3)',border:'1px solid var(--border2)',padding:'10px 14px',
-                position:'relative',overflow:'hidden',minWidth:80}}>
-                <div style={{position:'absolute',top:0,left:0,right:0,height:1,
-                  background:`linear-gradient(90deg,transparent,${color}40,transparent)`}}/>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:16,color,lineHeight:1,marginBottom:3,
-                  textShadow:color!=='var(--text2)'?`0 0 10px ${color}`:'none'}}>
+              {label:'COLLECTORS',value:data?.totalOwners??liveOwners,color:'var(--lime)',icon:'◈'},
+              {label:'SPECIES',value:TOTAL_SPECIES,color:'var(--bright)',icon:'◉'},
+              {label:'FULL DEX',value:completeCount,color:'var(--gold)',icon:'★'},
+              {label:'ON-CHAIN',value:TOTAL_TOKENS,color:'var(--cyan)',icon:'⬡'},
+            ]).map(({label,value,color,icon})=>(
+              <div key={label} style={{
+                background:'linear-gradient(135deg,var(--bg3) 0%,var(--panel) 100%)',
+                border:`1px solid ${color}30`,padding:'12px 16px',
+                position:'relative',overflow:'hidden',minWidth:88,
+                boxShadow:`0 0 20px ${color}08, inset 0 1px 0 ${color}15`}}>
+                <div style={{position:'absolute',top:0,left:0,right:0,height:2,
+                  background:`linear-gradient(90deg,transparent,${color}60,transparent)`}}/>
+                <div style={{position:'absolute',bottom:-8,right:-4,fontFamily:'var(--ff-pixel)',fontSize:28,
+                  color:`${color}10`,lineHeight:1,pointerEvents:'none',userSelect:'none'}}>{icon}</div>
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:20,color,lineHeight:1,marginBottom:4,
+                  textShadow:color!=='var(--text2)'?`0 0 14px ${color}80`:'none',letterSpacing:-1}}>
                   {value>0?<AnimatedNumber value={value}/>:'--'}
                 </div>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1}}>{label}</div>
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1.5}}>{label}</div>
               </div>
             ))}
           </div>
 
           {/* Actions (right side) */}
           <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both'}}>
-            <button className="btn" onClick={fetchLeaderboard} disabled={scanning}>↺ REFRESH</button>
+            <button className="btn btn-primary" onClick={fetchLeaderboard} disabled={scanning||loading}
+              style={{position:'relative',overflow:'hidden'}}>
+              {loading?'↺ LOADING…':'↺ REFRESH'}
+            </button>
           </div>
         </div>
 
         {data&&!scanning&&(
           <div style={{padding:'6px 24px 8px',fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text3)',letterSpacing:1,
-            borderTop:'1px solid var(--border)'}}>
-            LAST UPDATED: {new Date(data.updatedAt).toUTCString().toUpperCase()} · AUTO-UPDATE: HOURLY
+            borderTop:'1px solid var(--border)',display:'flex',gap:16,flexWrap:'wrap'}}>
+            <span>DATA: {new Date(data.updatedAt).toUTCString().toUpperCase()}</span>
+            {lastRefreshed&&<span style={{color:'var(--text2)'}}>· PAGE LOADED: {lastRefreshed.toUTCString().toUpperCase()}</span>}
+            <span style={{marginLeft:'auto',color:'var(--green2)'}}>↻ AUTO-REFRESH EVERY 5 MIN · CRON: HOURLY</span>
           </div>
         )}
       </header>
@@ -807,7 +795,12 @@ export default function CC0Masters() {
               <div style={{overflowX:'auto'}}>
                 <table className="lb-table">
                   <thead>
-                    <tr>{['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=><th key={h}>{h}</th>)}</tr>
+                    <tr style={{background:'linear-gradient(90deg,var(--bg) 0%,var(--bg2) 100%)'}}>
+                      {['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=>(
+                        <th key={h} style={{borderRight:'1px solid var(--border)',letterSpacing:1.5,
+                          background:'transparent'}}>{h}</th>
+                      ))}
+                    </tr>
                   </thead>
                   <tbody>
                     {sorted.map((entry,i)=>{
@@ -819,10 +812,23 @@ export default function CC0Masters() {
                       return [
                         <tr key={entry.address} className={`lb-row${isOpen?' open':''}`}
                           onClick={()=>setOpenRow(isOpen?null:entry.address)}
-                          style={{animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`}}>
-                          <td style={{width:38,textAlign:'center'}}>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?13:9,color:rankColor,
-                              textShadow:i<3?`0 0 8px ${rankColor}`:'none'}}>{i+1}</span>
+                          style={{
+                            animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`,
+                            borderLeft:i<3?`3px solid ${rankColor}`:'3px solid transparent',
+                            background:i===0?`linear-gradient(90deg,rgba(255,208,64,0.04) 0%,transparent 40%)`
+                              :i===1?`linear-gradient(90deg,rgba(144,184,160,0.03) 0%,transparent 40%)`
+                              :i===2?`linear-gradient(90deg,rgba(200,112,48,0.03) 0%,transparent 40%)`:'',
+                          }}>
+                          <td style={{width:38,textAlign:'center',padding:'0 8px'}}>
+                            <div style={{
+                              fontFamily:'var(--ff-pixel)',fontSize:i<3?13:9,color:rankColor,
+                              textShadow:i<3?`0 0 10px ${rankColor}, 0 0 20px ${rankColor}60`:'none',
+                              background:i<3?`${rankColor}10`:'transparent',
+                              border:i<3?`1px solid ${rankColor}30`:'none',
+                              padding:i<3?'3px 6px':'2px',
+                              display:'inline-block',minWidth:24,textAlign:'center'}}>
+                              {i+1}
+                            </div>
                           </td>
                           <td><AddressDisplay address={entry.address}/></td>
                           <td>
@@ -873,51 +879,46 @@ export default function CC0Masters() {
                 return <div key={`f-${num}-${i}`} style={{flexShrink:0}}><Sprite src={imgData.png||imgData.svg} name={imgData.name} size={40}/></div>;
               })}
             </div>
-   <div style={{
-  marginBottom: '14px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px'
-}}>
-  <span style={{
-    fontFamily: 'var(--ff-pixel)',
-    fontSize: '16px',
-    color: 'var(--bright)',
-    letterSpacing: '1px'
-  }}>
-    CC0mon by
-  </span>
-  <a
-    href="https://twitter.com/SatoshisMom"
-    target="_blank"
-    rel="noreferrer"
-    style={{
-      fontFamily: 'var(--ff-pixel)',
-      fontSize: '14px',
-      color: 'var(--lime)',
-      textDecoration: 'none'
-    }}
-    onMouseEnter={e => (e.currentTarget.style.color = 'var(--glow)')}
-    onMouseLeave={e => (e.currentTarget.style.color = 'var(--lime)')}
-  >
-    @SatoshisMom
-  </a>
-</div>
           </div>
-          <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap'}}>
-            {[
-              ['OPENSEA ▸','https://opensea.io/collection/cc0mon'],
-              ['ETHERSCAN ▸',`https://etherscan.io/address/${CC0_CONTRACT}`],
-              ['CC0MON.COM ▸','https://cc0mon.com'],
-            ].map(([l,h])=>(
-              <a key={l} href={h} target="_blank" rel="noreferrer"
-                style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',textDecoration:'none',
-                  letterSpacing:1,transition:'color 0.1s'}}
-                onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}
-                onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--text3)'}>
-                {l}
+        )}
+
+        <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:'flex-end'}}>
+          <div>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
+              ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
+              <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
+            </div>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:'flex-end'}}>
+            {/* CC0mon credit */}
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,letterSpacing:2,
+              textShadow:'0 0 16px rgba(124,232,50,0.2)'}}>
+              <span style={{color:'var(--text2)'}}>CC0MON BY{' '}</span>
+              <a href="https://x.com/SatoshisMom" target="_blank" rel="noreferrer"
+                style={{color:'var(--lime)',textDecoration:'none',
+                  textShadow:'0 0 10px rgba(124,232,50,0.5)'}}
+                onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color='var(--glow)';(e.currentTarget as HTMLElement).style.textShadow='0 0 18px rgba(200,255,80,0.7)';}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color='var(--lime)';(e.currentTarget as HTMLElement).style.textShadow='0 0 10px rgba(124,232,50,0.5)';}}>
+                @SATOSHISMOM
               </a>
-            ))}
+            </div>
+            {/* External links */}
+            <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
+              {[
+                ['OPENSEA ▸','https://opensea.io/collection/cc0mon'],
+                ['ETHERSCAN ▸',`https://etherscan.io/address/${CC0_CONTRACT}`],
+                ['CC0MON.COM ▸','https://cc0mon.com'],
+              ].map(([l,h])=>(
+                <a key={l} href={h} target="_blank" rel="noreferrer"
+                  style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',textDecoration:'none',
+                    letterSpacing:1,transition:'color 0.1s'}}
+                  onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}
+                  onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--text3)'}>
+                  {l}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 

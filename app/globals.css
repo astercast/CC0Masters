@@ -399,3 +399,43 @@ body::after {
   60% { clip-path: inset(10% 0 80% 0); transform: translateX(-2px); }
   80% { clip-path: inset(80% 0 5% 0); transform: translateX(2px); }
 }
+
+/* ── Enhanced pulse for LIVE indicator ── */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--lime), 0 0 16px rgba(124,232,50,0.4); }
+  50% { opacity: 0.4; box-shadow: 0 0 4px var(--lime); }
+}
+
+/* ── Stat card hover glow ── */
+.stat-card {
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ── Table row left border transition ── */
+.lb-row {
+  border-left: 3px solid transparent;
+  transition: background 0.08s, border-color 0.08s;
+}
+
+/* ── Podium card ambient pulse ── */
+@keyframes ambient {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ── Glow text utility ── */
+.glow-text { color: var(--glow); text-shadow: 0 0 8px var(--lime), 0 0 20px rgba(124,232,50,0.4); }
+.glow-gold { color: var(--gold); text-shadow: 0 0 8px var(--gold), 0 0 20px rgba(255,208,64,0.4); }
+.glow-silver { color: var(--silver); text-shadow: 0 0 8px var(--silver), 0 0 16px rgba(144,184,160,0.3); }
+.glow-bronze { color: var(--bronze); text-shadow: 0 0 8px var(--bronze), 0 0 16px rgba(200,112,48,0.3); }
+
+/* ── Complete badge ── */
+.badge-complete {
+  color: var(--lime);
+  border: 1px solid var(--green2);
+  background: rgba(124,232,50,0.08);
+  box-shadow: 0 0 8px rgba(124,232,50,0.15);
+}

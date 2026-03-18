@@ -48,6 +48,7 @@ body {
   background: var(--black);
   color: var(--text);
   font-family: var(--ff-mono);
+  font-size: 14px;
   -webkit-font-smoothing: none;
   image-rendering: pixelated;
   overflow-x: hidden;
@@ -120,7 +121,7 @@ body::after {
 /* ── Buttons ── */
 .btn {
   font-family: var(--ff-pixel);
-  font-size: 9px;
+  font-size: 14px;
   letter-spacing: 0.05em;
   border: 2px solid var(--green1);
   background: var(--bg3);
@@ -165,7 +166,7 @@ body::after {
   color: var(--text2);
   background: transparent;
   padding: 5px 10px;
-  font-size: 8px;
+  font-size: 13px;
   box-shadow: 1px 1px 0 var(--bg2);
 }
 .btn-filter:hover { border-color: var(--green2); color: var(--bright); }
@@ -215,7 +216,7 @@ body::after {
 .lb-table th {
   padding: 9px 12px;
   font-family: var(--ff-pixel);
-  font-size: 7px;
+  font-size: 12px;
   color: var(--lime);
   text-align: left;
   letter-spacing: 0.1em;
@@ -302,7 +303,7 @@ body::after {
   display: inline-block;
   animation: ticker 60s linear infinite;
   font-family: var(--ff-pixel);
-  font-size: 7px;
+  font-size: 12px;
   color: var(--text2);
   letter-spacing: 0.08em;
 }
@@ -334,7 +335,7 @@ body::after {
 /* ── Section label ── */
 .section-label {
   font-family: var(--ff-pixel);
-  font-size: 8px;
+  font-size: 13px;
   color: var(--lime);
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -345,13 +346,13 @@ body::after {
 .section-label::before {
   content: '▶';
   color: var(--green2);
-  font-size: 6px;
+  font-size: 16px;
 }
 
 /* ── Chip tag ── */
 .chip {
   font-family: var(--ff-pixel);
-  font-size: 6px;
+  font-size: 16px;
   border: 1px solid var(--border2);
   color: var(--text2);
   padding: 2px 6px;
@@ -362,7 +363,7 @@ body::after {
 /* ── Tab buttons ── */
 .tab-btn {
   font-family: var(--ff-pixel);
-  font-size: 7px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   border: none;
   background: transparent;
@@ -510,8 +511,8 @@ main {
 
   /* Table — allow horizontal scroll */
   .lb-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .lb-table th, .lb-table td { padding: 8px 8px; font-size: 7px; white-space: nowrap; }
-  .lb-table th { font-size: 5.5px; }
+  .lb-table th, .lb-table td { padding: 8px 8px; font-size: 12px; white-space: nowrap; }
+  .lb-table th { font-size: 11px; }
 
   /* Detail panel — compact */
   .detail-panel { padding: 12px; }
@@ -523,7 +524,7 @@ main {
   .species-grid { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)) !important; }
 
   /* Footer links wrap nicely */
-  footer a { font-size: 7px !important; }
+  footer a { font-size: 12px !important; }
 
   /* Section header divider line */
   .section-divider { display: none; }

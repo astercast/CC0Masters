@@ -40,7 +40,7 @@ function AddressDisplay({ address, onNotify }: { address: string; onNotify?: ()=
   return (
     <a href={`https://opensea.io/${address}`} target="_blank" rel="noreferrer"
       onClick={e=>{ e.stopPropagation(); onNotify?.(); }} title={address}
-      style={{ fontFamily:'var(--ff-mono)', fontSize:12,
+      style={{ fontFamily:'var(--ff-mono)', fontSize:16,
         color: ens ? 'var(--bright)' : 'var(--text)',
         textDecoration:'none',
         textShadow: ens ? '0 0 8px rgba(168,255,64,0.4)' : 'none',
@@ -363,7 +363,7 @@ function PodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; 
 
       <div style={{position:'relative',zIndex:2,textAlign:'center',padding:'4px 0'}}>
         {/* rank label */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:COLORS[rank],letterSpacing:3,marginBottom:10,
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:COLORS[rank],letterSpacing:3,marginBottom:10,
           textShadow:`0 0 8px ${COLORS[rank]}80`}}>{LABELS[rank]}</div>
 
         {/* medal */}
@@ -378,17 +378,17 @@ function PodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; 
         </div>
 
         {/* big number */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:rank===1?36:24,color:COLORS[rank],
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:rank===1?42:28,color:COLORS[rank],
           textShadow:`0 0 16px ${COLORS[rank]}, 0 0 32px ${COLORS[rank]}60, 0 0 48px ${COLORS[rank]}30`,
           lineHeight:1,marginBottom:2,letterSpacing:-1}}>
           {entry.collected}
-          <span style={{fontSize:rank===1?12:9,color:'var(--text3)',marginLeft:5}}>/{TOTAL_SPECIES}</span>
+          <span style={{fontSize:rank===1?16:13,color:'var(--text3)',marginLeft:5}}>/{TOTAL_SPECIES}</span>
         </div>
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text3)',letterSpacing:2,marginBottom:12}}>SPECIES</div>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:2,marginBottom:12}}>SPECIES</div>
 
         <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={rank===1?8:6}/>
 
-        <div style={{marginTop:10,fontFamily:'var(--ff-pixel)',fontSize:5.5,letterSpacing:1,
+        <div style={{marginTop:10,fontFamily:'var(--ff-pixel)',fontSize:11,letterSpacing:1,
           display:'flex',justifyContent:'center',gap:10}}>
           <span style={{color:COLORS[rank],textShadow:`0 0 6px ${COLORS[rank]}60`}}>{entry.progress}</span>
           <span style={{color:'var(--border2)'}}>·</span>
@@ -437,18 +437,18 @@ function DetailPanel({
         ] as [string,string,string][]).map(([l,v,c])=>(
           <div key={l} style={{background:'var(--bg2)',border:'1px solid var(--border)',padding:'10px 12px',position:'relative',overflow:'hidden'}}>
             <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,${c}60,transparent)`}}/>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:c,marginBottom:3,lineHeight:1}}>{v}</div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1}}>{l}</div>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:18,color:c,marginBottom:3,lineHeight:1}}>{v}</div>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',letterSpacing:1}}>{l}</div>
           </div>
         ))}
         <a href={`https://opensea.io/${entry.address}`} target="_blank" rel="noreferrer"
           onClick={()=>onNotify?.()}
           style={{background:'var(--bg2)',border:'1px solid var(--border)',padding:'10px 12px',textDecoration:'none',
             display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',
-            color:'var(--text2)',fontSize:9,fontFamily:'var(--ff-pixel)',letterSpacing:1,gap:4,transition:'all 0.1s'}}
+            color:'var(--text2)',fontSize:14,fontFamily:'var(--ff-pixel)',letterSpacing:1,gap:4,transition:'all 0.1s'}}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--lime)';(e.currentTarget as HTMLElement).style.color='var(--lime)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--border)';(e.currentTarget as HTMLElement).style.color='var(--text2)';}}>
-          <span style={{fontSize:16}}>🌊</span>OPENSEA ▸
+          <span style={{fontSize:20}}>🌊</span>OPENSEA ▸
         </a>
       </div>
 
@@ -471,11 +471,11 @@ function DetailPanel({
               <div key={et} style={{background:'var(--bg2)',border:`1px solid ${col}20`,padding:'8px',
                 animation:`fadeUp 0.3s ease ${i*18}ms both`}}>
                 <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:4}}>
-                  <span style={{fontSize:12}}>{ENERGY_EMOJIS[et]}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:5.5,color:col,letterSpacing:1}}>{et.toUpperCase()}</span>
+                  <span style={{fontSize:16}}>{ENERGY_EMOJIS[et]}</span>
+                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:col,letterSpacing:1}}>{et.toUpperCase()}</span>
                 </div>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:col,marginBottom:5}}>
-                  {info.collected}<span style={{fontSize:7,color:'var(--text2)'}}>/{info.total}</span>
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:16,color:col,marginBottom:5}}>
+                  {info.collected}<span style={{fontSize:12,color:'var(--text2)'}}>/{info.total}</span>
                 </div>
                 <div className="pbar-wrap" style={{height:3}}>
                   <div className="pbar-fill" style={{width:`${pct}%`,background:`linear-gradient(90deg,${col}50,${col})`}}/>
@@ -497,10 +497,10 @@ function DetailPanel({
             return (
               <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}>
                 {sp.collected&&(
-                  <div style={{position:'absolute',top:2,right:3,fontFamily:'var(--ff-pixel)',fontSize:5,color:'var(--lime)'}}>✓</div>
+                  <div style={{position:'absolute',top:2,right:3,fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--lime)'}}>✓</div>
                 )}
                 <Sprite src={src} name={sp.name} size={52} dimmed={!sp.collected}/>
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:4,
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,
                   color:sp.collected?'var(--text)':'var(--text3)',lineHeight:1.6,marginTop:2,
                   overflow:'hidden',display:'-webkit-box' as 'flex',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as 'vertical',
                   wordBreak:'break-word'}}>
@@ -698,18 +698,18 @@ export default function CC0Masters() {
           padding:'10px 20px',display:'flex',alignItems:'center',gap:10,
           animation:'fadeUp 0.2s ease both',
         }}>
-          <span style={{fontSize:16}}>🌊</span>
-          <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)',letterSpacing:1}}>{toast}</span>
+          <span style={{fontSize:20}}>🌊</span>
+          <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--lime)',letterSpacing:1}}>{toast}</span>
         </div>
       )}
 
       {/* ══ COMMUNITY BANNER ══ */}
       <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:mobile?'6px 12px':'7px 24px',
         display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',justifyContent:'center'}}>
-        <span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
+        <span style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
           ▶ CHECK OUT OTHER COMMUNITY TOOLS HERE ▸
         </span>
-        <span style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
+        <span style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
           BY{' '}
           <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
             style={{color:'var(--lime)',textDecoration:'none',letterSpacing:1}}
@@ -721,7 +721,7 @@ export default function CC0Masters() {
         </span>
         <a href="https://cc0mon-community.netlify.app/" target="_blank" rel="noreferrer"
           className="btn btn-filter"
-          style={{fontFamily:'var(--ff-pixel)',fontSize:8,letterSpacing:1,textDecoration:'none',padding:'5px 12px'}}>
+          style={{fontFamily:'var(--ff-pixel)',fontSize:13,letterSpacing:1,textDecoration:'none',padding:'5px 12px'}}>
           🌐 COMMUNITY
         </a>
       </div>
@@ -732,17 +732,17 @@ export default function CC0Masters() {
         {/* top bar */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:mobile?'6px 12px':'10px 24px',
           borderBottom:'1px solid var(--border)',background:'var(--bg)',flexWrap:'wrap',gap:4}}>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:2}}>
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text2)',letterSpacing:2}}>
             <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721 · CC0 · {data?.scannedBlock?`BLOCK #${data.scannedBlock.toLocaleString()}`:'LIVE'}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-            {!mobile&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1}}>
+            {!mobile&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text3)',letterSpacing:1}}>
               NEXT UPDATE: <span style={{color:'var(--text2)'}}>{Math.floor(nextRefreshIn/60)}:{String(nextRefreshIn%60).padStart(2,'0')}</span>
             </span>}
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               <div style={{width:7,height:7,background:'var(--lime)',borderRadius:0,
                 boxShadow:'0 0 8px var(--lime), 0 0 16px rgba(124,232,50,0.4)',animation:'pulse 1.5s ease-in-out infinite'}}/>
-              <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
+              <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
             </div>
           </div>
         </div>
@@ -772,7 +772,7 @@ export default function CC0Masters() {
                 CC0MASTERS
               </div>
             </div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text2)',letterSpacing:3,marginBottom:4}}>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text2)',letterSpacing:3,marginBottom:4}}>
               WHO WILL COLLECT THEM ALL<span className="blink">_</span>
             </div>
             <div className="px-divider" style={{width:200}}/>
@@ -802,16 +802,16 @@ export default function CC0Masters() {
                 {/* corner icon — contained, not clipping */}
                 <div style={{
                   position:'absolute',top:8,right:10,
-                  fontFamily:'var(--ff-pixel)',fontSize:16,
+                  fontFamily:'var(--ff-pixel)',fontSize:20,
                   color:`${color}20`,lineHeight:1,
                   pointerEvents:'none',userSelect:'none'}}>{icon}</div>
                 {/* value */}
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:22,color,lineHeight:1,marginBottom:6,
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:26,color,lineHeight:1,marginBottom:6,
                   textShadow:color!=='var(--text2)'?`0 0 16px ${color}90`:'none',letterSpacing:-1}}>
                   {value>0?<AnimatedNumber value={value}/>:'--'}
                 </div>
                 {/* label */}
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',letterSpacing:2,
+                <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',letterSpacing:2,
                   textTransform:'uppercase'}}>{label}</div>
               </div>
             ))}
@@ -827,7 +827,7 @@ export default function CC0Masters() {
         </div>
 
         {data&&!scanning&&!mobile&&(
-          <div style={{padding:'6px 24px 8px',fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text3)',letterSpacing:1,
+          <div style={{padding:'6px 24px 8px',fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:1,
             borderTop:'1px solid var(--border)',display:'flex',gap:16,flexWrap:'wrap'}}>
             <span>DATA: {new Date(data.updatedAt).toUTCString().toUpperCase()}</span>
             {lastRefreshed&&<span style={{color:'var(--text2)'}}>· PAGE LOADED: {lastRefreshed.toUTCString().toUpperCase()}</span>}
@@ -851,18 +851,18 @@ export default function CC0Masters() {
         <div style={{background:'var(--bg2)',borderBottom:'2px solid var(--green2)',padding:mobile?'10px 12px':'12px 24px',
           animation:'fadeIn 0.2s ease both'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--lime)',letterSpacing:2}}>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--lime)',letterSpacing:2}}>
               ⬡ {scanPhase||'SCANNING...'}
             </div>
             <div style={{display:'flex',gap:10,alignItems:'center'}}>
-              <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--glow)'}}>{scanPct}%</span>
-              <button className="btn btn-danger" style={{padding:'5px 10px',fontSize:7}} onClick={()=>{scanAbort.current=true;}}>✕ STOP</button>
+              <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--glow)'}}>{scanPct}%</span>
+              <button className="btn btn-danger" style={{padding:'5px 10px',fontSize:12}} onClick={()=>{scanAbort.current=true;}}>✕ STOP</button>
             </div>
           </div>
           <div className="pbar-wrap" style={{height:8,marginBottom:5}}>
             <div className="pbar-fill" style={{width:`${scanPct}%`,transition:'width 0.4s ease'}}/>
           </div>
-          <div style={{display:'flex',justifyContent:'space-between',fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text2)',letterSpacing:1}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',letterSpacing:1}}>
             <span>{scanDetail}</span>
             {liveOwners>0&&<span style={{color:'var(--lime)'}}>{liveOwners.toLocaleString()} OWNERS FOUND</span>}
           </div>
@@ -876,12 +876,12 @@ export default function CC0Masters() {
         {!loading&&!error&&sorted.length>=3&&(
           <section style={{marginBottom:24}}>
             <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--lime)',letterSpacing:3,
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--lime)',letterSpacing:3,
                 textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
-                <span style={{color:'var(--green2)',fontSize:7}}>▶</span> CHAMPION PODIUM
+                <span style={{color:'var(--green2)',fontSize:12}}>▶</span> CHAMPION PODIUM
               </div>
               <div style={{flex:1,height:1,background:'linear-gradient(90deg,var(--green1),transparent)'}}/>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text3)',letterSpacing:1}}>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:1}}>
                 {(data?.leaders?.length??0).toLocaleString()} TOTAL COLLECTORS
               </div>
             </div>
@@ -902,14 +902,14 @@ export default function CC0Masters() {
         {/* FILTER/SORT */}
         {!loading&&!error&&sorted.length>0&&(
           <div style={{display:'flex',gap:5,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',marginRight:3}}>SHOW:</span>
+            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginRight:3}}>SHOW:</span>
             {(['all','top10','top50'] as const).map(f=>(
               <button key={f} className={`btn btn-filter${filter===f?' active':''}`} onClick={()=>setFilter(f)}>
                 {f==='all'?'ALL':f==='top10'?'TOP 10':'TOP 50'}
               </button>
             ))}
 
-            <div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)'}}>
+            <div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)'}}>
               {sorted.length.toLocaleString()} COLLECTORS
             </div>
           </div>
@@ -918,9 +918,9 @@ export default function CC0Masters() {
         {/* RANKINGS TABLE */}
         <div ref={rankingsRef}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--lime)',letterSpacing:3,
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--lime)',letterSpacing:3,
               textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
-              <span style={{color:'var(--green2)',fontSize:7}}>▶</span> FULL RANKINGS
+              <span style={{color:'var(--green2)',fontSize:12}}>▶</span> FULL RANKINGS
             </div>
             <div style={{flex:1,height:1,background:'linear-gradient(90deg,var(--green1),transparent)'}}/>
           </div>
@@ -934,9 +934,9 @@ export default function CC0Masters() {
             </div>
           ):error?(
             <div className="px-border" style={{background:'var(--panel)',padding:'60px 24px',textAlign:'center'}}>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:28,color:'var(--border2)',marginBottom:14}}>◎</div>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--text2)',marginBottom:8,letterSpacing:2}}>NO LEADERBOARD DATA YET</div>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text3)',lineHeight:3}}>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:32,color:'var(--border2)',marginBottom:14}}>◎</div>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--text2)',marginBottom:8,letterSpacing:2}}>NO LEADERBOARD DATA YET</div>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',lineHeight:3}}>
                 DATA UPDATES HOURLY<br/>CHECK BACK SOON
               </div>
             </div>
@@ -971,7 +971,7 @@ export default function CC0Masters() {
                           }}>
                           <td style={{width:mobile?28:38,textAlign:'center',padding:mobile?'0 4px':'0 8px'}}>
                             <div style={{
-                              fontFamily:'var(--ff-pixel)',fontSize:i<3?13:9,color:rankColor,
+                              fontFamily:'var(--ff-pixel)',fontSize:i<3?17:13,color:rankColor,
                               textShadow:i<3?`0 0 10px ${rankColor}, 0 0 20px ${rankColor}60`:'none',
                               background:i<3?`${rankColor}10`:'transparent',
                               border:i<3?`1px solid ${rankColor}30`:'none',
@@ -982,19 +982,19 @@ export default function CC0Masters() {
                           </td>
                           <td><AddressDisplay address={entry.address} onNotify={()=>showToast('Opening OpenSea…')}/></td>
                           <td>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?15:12,color:rankColor,
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
                               textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',marginLeft:4}}>/{TOTAL_SPECIES}</span>
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginLeft:4}}>/{TOTAL_SPECIES}</span>
                           </td>
                           {!mobile&&<td style={{minWidth:90}}><ProgressBar pct={pct} variant={pv} height={5}/></td>}
                           <td>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:pct>80?'var(--bright)':'var(--text)',
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:pct>80?'var(--bright)':'var(--text)',
                               textShadow:pct>80?'0 0 8px rgba(168,255,64,0.4)':'none'}}>{entry.progress}</span>
                           </td>
-                          {!mobile&&<td><span style={{fontFamily:'var(--ff-mono)',fontSize:12,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>}
+                          {!mobile&&<td><span style={{fontFamily:'var(--ff-mono)',fontSize:16,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>}
                           {!mobile&&<td><EnergyDots byEnergy={entry.byEnergy}/></td>}
                           <td>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,letterSpacing:0.5,
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,letterSpacing:0.5,
                               color:entry.missing===0?'var(--lime)':entry.missing<10?'var(--amber)':'var(--text2)',
                               border:`1px solid ${entry.missing===0?'var(--green2)':entry.missing<10?'rgba(255,160,64,0.4)':'var(--border)'}`,
                               background:entry.missing===0?'rgba(124,232,50,0.08)':'transparent',
@@ -1034,15 +1034,15 @@ export default function CC0Masters() {
 
         <div style={{display:'flex',flexDirection:mobile?'column':'row',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:mobile?'flex-start':'flex-end'}}>
           <div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:16,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
               ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
               <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
             </div>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:mobile?'flex-start':'flex-end'}}>
             {/* CC0mon credit */}
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,letterSpacing:2,
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:17,letterSpacing:2,
               textShadow:'0 0 16px rgba(124,232,50,0.2)'}}>
               <span style={{color:'var(--text2)'}}>CC0MON BY{' '}</span>
               <a href="https://x.com/SatoshisMom" target="_blank" rel="noreferrer"
@@ -1061,7 +1061,7 @@ export default function CC0Masters() {
                 ['CC0MON.COM ▸','https://cc0mon.com'],
               ].map(([l,h])=>(
                 <a key={l} href={h} target="_blank" rel="noreferrer"
-                  style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',textDecoration:'none',
+                  style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text3)',textDecoration:'none',
                     letterSpacing:1,transition:'color 0.1s'}}
                   onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}
                   onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--text3)'}>
@@ -1074,7 +1074,7 @@ export default function CC0Masters() {
 
         {/* Hidden admin section */}
         <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--border)'}}>
-          <details style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)'}}>
+          <details style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text3)'}}>
             <summary style={{cursor:'pointer',letterSpacing:1,listStyle:'none',display:'flex',alignItems:'center',gap:6,userSelect:'none'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color='var(--text2)';}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color='var(--text3)';}}>
@@ -1087,14 +1087,14 @@ export default function CC0Masters() {
                 <button className="btn btn-primary" onClick={startScan}>⬡ ADMIN SCAN</button>
               )}
               <button className="btn" onClick={fetchLeaderboard} disabled={scanning}>↺ RELOAD DATA</button>
-              <span style={{color:'var(--text3)',fontSize:5,letterSpacing:1,opacity:0.5}}>TRIGGERS A FULL ON-CHAIN SCAN (~5 MIN)</span>
+              <span style={{color:'var(--text3)',fontSize:10,letterSpacing:1,opacity:0.5}}>TRIGGERS A FULL ON-CHAIN SCAN (~5 MIN)</span>
             </div>
             {scanPhase&&<div style={{marginTop:8,color:'var(--lime)',letterSpacing:1}}>{scanPhase} {scanPct>0&&`— ${scanPct}%`}</div>}
           </details>
         </div>
 
         <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--border)',textAlign:'center'}}>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',letterSpacing:3,marginBottom:6,
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:16,color:'var(--text2)',letterSpacing:3,marginBottom:6,
             textShadow:'0 0 20px rgba(124,232,50,0.15)'}}>
             BUILT BY{' '}
             <a href="https://x.com/aster0x" target="_blank" rel="noreferrer"
@@ -1105,7 +1105,7 @@ export default function CC0Masters() {
               @ASTER0X
             </a>
           </div>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--text3)',letterSpacing:1,opacity:0.5}}>
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--text3)',letterSpacing:1,opacity:0.5}}>
             CC0 · NO RIGHTS RESERVED · BUILD BY THE COMMUNITY
           </div>
         </div>

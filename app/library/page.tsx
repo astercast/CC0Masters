@@ -14,7 +14,6 @@ const RC: Record<string,string> = {
   Common:'#6a8a60', Uncommon:'#7ee832', Rare:'#40b0ff', Epic:'#c080ff', Legendary:'#ffd040',
 };
 const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary'];
-const RARITY_SORT_ORDER: Record<string,number> = { Legendary:0, Epic:1, Rare:2, Uncommon:3, Common:4 };
 
 // Approximate supply by rarity tier (9999 total / 260 species * rarity factor)
 const SUPPLY_EST: Record<string,number> = {
@@ -90,8 +89,10 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
         background:`linear-gradient(90deg,transparent,${col},transparent)`,
         opacity:hov?1:0.5,transition:'opacity 0.15s'}}/>
       {/* # badge */}
-      <div style={{position:'absolute',top:7,left:8,fontFamily:'var(--ff-pixel)',fontSize:8,
-        color:hov?col:'var(--text3)',transition:'color 0.15s'}}>#{String(sp.number).padStart(3,'0')}</div>
+      <div style={{position:'absolute',top:6,left:7,fontFamily:'var(--ff-pixel)',fontSize:11,
+        color:hov?col:'var(--text2)',letterSpacing:0.5,fontWeight:'bold',
+        textShadow:hov?`0 0 8px ${col}80`:'none',
+        transition:'all 0.15s'}}>#{String(sp.number).padStart(3,'0')}</div>
       {/* rarity gem */}
       <div style={{position:'absolute',top:8,right:8,width:7,height:7,background:rc,
         boxShadow:hov?`0 0 8px ${rc}, 0 0 16px ${rc}60`:`0 0 4px ${rc}80`,
@@ -129,7 +130,7 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
 
 /* ── Detail Modal ── */
 function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
-  sp:Species; holderMap:Record<number,{address:string;totalHeld:number}[]>;
+  sp:Species; holderMap:Record<number,{address:string}[]>;
   allSpecies:Species[]; onClose:()=>void; onNav:(n:number)=>void;
 }) {
   const [desc,setDesc]=useState('');
@@ -352,10 +353,7 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
                       flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {h.address.slice(0,8)}…{h.address.slice(-5)}
                     </span>
-                    <span style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:col,
-                      padding:'1px 4px',border:`1px solid ${col}40`,flexShrink:0}}>
-                      {h.totalHeld} held
-                    </span>
+
                   </div>
                 ))}
               </div>
@@ -421,8 +419,8 @@ function LibraryInner() {
   const [search,setSearch]=useState('');
   const [filterEnergy,setFilterEnergy]=useState('');
   const [filterRarity,setFilterRarity]=useState('');
-  const [sortBy,setSortBy]=useState<'number'|'holders'|'rarity'>('number');
-  const [holderMap,setHolderMap]=useState<Record<number,{address:string;totalHeld:number}[]>>({});
+  const [sortBy,setSortBy]=useState<'number'|'holders'>('number');
+  const [holderMap,setHolderMap]=useState<Record<number,{address:string}[]>>({});
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
 
@@ -456,17 +454,13 @@ function LibraryInner() {
   // Build holder map with total tokens held per species
   useEffect(()=>{
     fetch('/api/leaderboard').then(r=>r.json()).then(data=>{
-      const map:Record<number,{address:string;totalHeld:number}[]>={};
+      const map:Record<number,{address:string}[]>={};
       for (const leader of (data.leaders||[])) {
         const nums=leader.collectedSpeciesNums||[];
         for (const n of nums) {
           if (!map[n]) map[n]=[];
-          map[n].push({ address:leader.address, totalHeld:leader.totalTokensHeld||0 });
+          map[n].push({ address:leader.address });
         }
-      }
-      // Sort each species holders by total tokens held desc
-      for (const n of Object.keys(map)) {
-        map[parseInt(n)].sort((a,b)=>b.totalHeld-a.totalHeld);
       }
       setHolderMap(map);
     }).catch(()=>{});
@@ -481,7 +475,6 @@ function LibraryInner() {
     return true;
   }).slice().sort((a,b)=>{
     if (sortBy==='holders') return (holderMap[b.number]?.length??0)-(holderMap[a.number]?.length??0);
-    if (sortBy==='rarity') return (RARITY_SORT_ORDER[a.rarity]??5)-(RARITY_SORT_ORDER[b.rarity]??5);
     return a.number-b.number;
   });
 
@@ -605,10 +598,7 @@ function LibraryInner() {
               onClick={()=>setSortBy('holders')} style={{fontSize:9,letterSpacing:1,padding:'5px 8px'}}>
               ◈ HOLDERS
             </button>
-            <button className={`btn btn-filter${sortBy==='rarity'?' active':''}`}
-              onClick={()=>setSortBy('rarity')} style={{fontSize:9,letterSpacing:1,padding:'5px 8px'}}>
-              ★ RARITY
-            </button>
+
           </div>
           <div style={{display:'flex',gap:4,marginLeft:4}}>
             {(['grid','list'] as const).map(v=>(

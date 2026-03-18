@@ -317,7 +317,7 @@ function SpriteParade({ images }: { images: Record<string,{svg:string;png:string
   );
 }
 
-function PodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean }) {
+function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean }) {
   const MEDALS = {1:'🥇',2:'🥈',3:'🥉'};
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
@@ -338,33 +338,38 @@ function PodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; 
 
       <div style={{position:'relative',zIndex:2,textAlign:'center',padding:'4px 0'}}>
         {/* rank label */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:COLORS[rank],letterSpacing:3,marginBottom:10,
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:11,color:COLORS[rank],letterSpacing:mobile?1:3,marginBottom:mobile?5:10,
           textShadow:`0 0 8px ${COLORS[rank]}80`}}>{LABELS[rank]}</div>
 
         {/* medal */}
-        <div style={{fontSize:rank===1?48:32,animation:'float 3.5s ease-in-out infinite',lineHeight:1,marginBottom:12,
+        <div style={{fontSize:mobile?(rank===1?28:20):rank===1?48:32,animation:'float 3.5s ease-in-out infinite',lineHeight:1,marginBottom:mobile?6:12,
           filter:`drop-shadow(0 0 12px ${COLORS[rank]}80) drop-shadow(0 4px 8px rgba(0,0,0,0.5))`}}>{MEDALS[rank]}</div>
 
         {/* address */}
-        <div style={{marginBottom:12,minHeight:20,padding:'6px 8px',
+        {!mobile&&<div style={{marginBottom:12,minHeight:20,padding:'6px 8px',
           background:`linear-gradient(90deg,transparent,${COLORS[rank]}08,transparent)`,
           borderTop:`1px solid ${COLORS[rank]}20`,borderBottom:`1px solid ${COLORS[rank]}20`}}>
           <AddressDisplay address={entry.address}/>
-        </div>
+        </div>}
+        {mobile&&<div style={{marginBottom:mobile?6:12,minHeight:16,fontFamily:'var(--ff-mono)',
+          fontSize:8,color:'var(--text2)',textAlign:'center',overflow:'hidden',
+          textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 4px'}}>
+          {entry.address.slice(0,6)}…{entry.address.slice(-4)}
+        </div>}
 
         {/* big number */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:rank===1?42:28,color:COLORS[rank],
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?(rank===1?20:16):rank===1?42:28,color:COLORS[rank],
           textShadow:`0 0 16px ${COLORS[rank]}, 0 0 32px ${COLORS[rank]}60, 0 0 48px ${COLORS[rank]}30`,
           lineHeight:1,marginBottom:2,letterSpacing:-1}}>
           {entry.collected}
-          <span style={{fontSize:rank===1?16:13,color:'var(--text3)',marginLeft:5}}>/{TOTAL_SPECIES}</span>
+          <span style={{fontSize:mobile?9:rank===1?16:13,color:'var(--text3)',marginLeft:mobile?2:5}}>/{TOTAL_SPECIES}</span>
         </div>
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:2,marginBottom:12}}>SPECIES</div>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:11,color:'var(--text3)',letterSpacing:mobile?1:2,marginBottom:mobile?6:12}}>SPECIES</div>
 
-        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={rank===1?8:6}/>
+        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={mobile?3:rank===1?8:6}/>
 
-        <div style={{marginTop:10,fontFamily:'var(--ff-pixel)',fontSize:11,letterSpacing:1,
-          display:'flex',justifyContent:'center',gap:10}}>
+        <div style={{marginTop:mobile?5:10,fontFamily:'var(--ff-pixel)',fontSize:mobile?7:11,letterSpacing:1,
+          display:'flex',justifyContent:'center',gap:mobile?5:10}}>
           <span style={{color:COLORS[rank],textShadow:`0 0 6px ${COLORS[rank]}60`}}>{entry.progress}</span>
           <span style={{color:'var(--border2)'}}>·</span>
           <span style={{color:'var(--text3)'}}>{entry.totalTokensHeld} TOKENS</span>
@@ -473,7 +478,7 @@ function DetailPanel({
             const src = imgData?.png || imgData?.svg || '';
             return (
               <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}
-                title={`View ${sp.name} in DEX`}
+                title={`#${sp.number} ${sp.name} — open in Library`}
                 style={{cursor:'pointer'}}
                 onClick={e=>{e.stopPropagation();onNavigate?.(parseInt(sp.number));}}>
                 {sp.collected&&(
@@ -913,16 +918,12 @@ export default function CC0Masters() {
                 {(data?.leaders?.length??0).toLocaleString()} TOTAL COLLECTORS
               </div>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1.1fr 1fr',gap:8,alignItems:'end',marginBottom:8}}>
-              {mobile?<>
-                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address}/>
-                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address}/>
-                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address}/>
-              </>:<>
-                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address}/>
-                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address}/>
-                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address}/>
-              </>}
+            <div style={{display:'grid',gridTemplateColumns:mobile?'1fr 1fr 1fr':'1fr 1.1fr 1fr',gap:mobile?4:8,alignItems:'end',marginBottom:8}}>
+              <>
+                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address} mobile={mobile}/>
+                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address} mobile={mobile}/>
+                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address} mobile={mobile}/>
+              </>
             </div>
           </section>
         )}

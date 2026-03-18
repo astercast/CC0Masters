@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 const BASE_URL = 'https://cc0masters.vercel.app';
+// Version bump forces Discord/Twitter to re-fetch the OG image cache
+const OG_IMAGE = `${BASE_URL}/og-image.png?v=35`;
 
 export const metadata: Metadata = {
   title: "CC0MASTERS — Who Will Collect Them All?",
@@ -12,7 +14,7 @@ export const metadata: Metadata = {
       { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico', sizes: '32x32' },
     ],
-    apple: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     title: "CC0MASTERS — Who Will Collect Them All?",
@@ -22,10 +24,11 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/api/og',
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: 'CC0MASTERS — Live CC0mon collector leaderboard on Ethereum',
+        type: 'image/png',
       }
     ],
   },
@@ -33,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "CC0MASTERS — Who Will Collect Them All?",
     description: "Live leaderboard for CC0mon collectors on Ethereum. 260 species. 9,999 on-chain NFTs. Who has the most?",
-    images: ['/api/og'],
+    images: [OG_IMAGE],
   },
 };
 

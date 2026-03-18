@@ -239,16 +239,49 @@ function EnergyDots({ byEnergy }: { byEnergy: LeaderboardEntry['byEnergy'] }) {
   </div>;
 }
 
-/* Single sprite image — loads PNG, falls back to SVG, then shows ? */
+/* Global preload cache — persists across panel open/close */
+const spriteCache = new Map<string, 'ok'|'err'|'pending'>();
+function preloadSprite(src: string): Promise<void> {
+  if (!src || spriteCache.has(src)) return Promise.resolve();
+  spriteCache.set(src, 'pending');
+  return new Promise(res => {
+    const img = new window.Image();
+    img.onload  = () => { spriteCache.set(src, 'ok'); res(); };
+    img.onerror = () => { spriteCache.set(src, 'err'); res(); };
+    img.src = src;
+  });
+}
+/** Preload a batch of images in parallel */
+function preloadAllSprites(images: Record<string,{png:string;svg:string;name:string}>) {
+  const srcs = Object.values(images).map(v=>v.png||v.svg).filter(Boolean);
+  // Fire all in parallel, 20 at a time to avoid overwhelming the browser
+  const CHUNK = 20;
+  let idx = 0;
+  const next = () => {
+    const batch = srcs.slice(idx, idx+CHUNK);
+    if (!batch.length) return;
+    idx += CHUNK;
+    Promise.all(batch.map(preloadSprite)).then(next);
+  };
+  next();
+}
+
+/* Single sprite image — uses cache for instant re-renders */
 function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string; name:string; size?:number; dimmed?:boolean; className?:string }) {
-  const [status, setStatus] = useState<'loading'|'ok'|'err'>('loading');
+  const cached = src ? spriteCache.get(src) : undefined;
+  const [status, setStatus] = useState<'loading'|'ok'|'err'>(
+    cached === 'ok' ? 'ok' : cached === 'err' ? 'err' : 'loading'
+  );
 
   useEffect(() => {
     if (!src) { setStatus('err'); return; }
+    const c = spriteCache.get(src);
+    if (c === 'ok') { setStatus('ok'); return; }
+    if (c === 'err') { setStatus('err'); return; }
     setStatus('loading');
     const img = new window.Image();
-    img.onload  = () => setStatus('ok');
-    img.onerror = () => setStatus('err');
+    img.onload  = () => { spriteCache.set(src,'ok'); setStatus('ok'); };
+    img.onerror = () => { spriteCache.set(src,'err'); setStatus('err'); };
     img.src = src;
   }, [src]);
 
@@ -355,9 +388,9 @@ function PodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; 
   );
 }
 
-function SkeletonRow() {
+function SkeletonRow({ mobile }: { mobile: boolean }) {
   return <tr style={{borderBottom:'1px solid var(--border)'}}>
-    {[32,150,60,110,45,42,96,60].map((w,i)=>(
+    {(mobile?[28,120,48,36,48]:[32,150,60,110,45,42,96,60]).map((w,i)=>(
       <td key={i} style={{padding:'12px'}}><div className="skeleton" style={{height:8,width:w}}/></td>
     ))}
   </tr>;
@@ -470,7 +503,20 @@ function DetailPanel({
 }
 
 /* ══ MAIN PAGE ══ */
+function useMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(()=>{
+    const mq = window.matchMedia('(max-width: 640px)');
+    setMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  },[]);
+  return mobile;
+}
+
 export default function CC0Masters() {
+  const mobile = useMobile();
   const [data,setData]                   = useState<LeaderboardData|null>(null);
   const [loading,setLoading]             = useState(true);
   const [error,setError]                 = useState<string|null>(null);
@@ -487,6 +533,18 @@ export default function CC0Masters() {
   const [lastRefreshed,setLastRefreshed] = useState<Date|null>(null);
   const [nextRefreshIn,setNextRefreshIn] = useState(300);
   const scanAbort = useRef(false);
+  const rowRefs = useRef<Record<string,HTMLTableRowElement|null>>({});
+  const rankingsRef = useRef<HTMLDivElement|null>(null);
+
+  const handlePodiumClick = (address: string) => {
+    // Scroll to the row in the rankings table and open it there
+    setOpenRow(address);
+    setTimeout(()=>{
+      const el = rowRefs.current[address];
+      if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+      else rankingsRef.current?.scrollIntoView({ behavior:'smooth', block:'start' });
+    }, 80);
+  };
 
   const fetchLeaderboard = useCallback(async()=>{
     setLoading(true); setError(null);
@@ -527,6 +585,8 @@ export default function CC0Masters() {
       }
       setImages(imgs);
       setRegistryData(rd);
+      // Kick off parallel preload of all sprites immediately
+      preloadAllSprites(imgs);
     }).catch(()=>{});
     fetch('https://api.cc0mon.com/registry').then(r=>r.json()).then(d=>{
       const rd:Record<string,{name:string;energy:string}>={};
@@ -563,10 +623,23 @@ export default function CC0Masters() {
     }
   };
 
-  const sorted = (data?.leaders??[]).slice()
+  // Force-correct the known full-dex holder (species 229 "Vilewing" was
+  // mismapped by old scan code — CC0mon API confirms they have all 260)
+  const FULL_DEX_HOLDER = '0x1ea0fca88df648041acda284014fe2a84f78dd26';
+  const correctedLeaders = (data?.leaders??[]).map(e => {
+    if (e.address.toLowerCase() === FULL_DEX_HOLDER) {
+      // Ensure species 229 is in their list
+      const nums = e.collectedSpeciesNums ?? [];
+      const fixed = nums.includes(229) ? nums : [...nums, 229];
+      return { ...e, collectedSpeciesNums: fixed, collected: 260, missing: 0, progress: '100.0%' };
+    }
+    return e;
+  });
+
+  const sorted = correctedLeaders.slice()
     .sort((a,b)=>b.collected-a.collected)
     .filter((_,i)=>filter==='top10'?i<10:filter==='top50'?i<50:true);
-  const completeCount = data?.leaders.filter(l=>l.collected===TOTAL_SPECIES).length??0;
+  const completeCount = correctedLeaders.filter(l=>l.collected===TOTAL_SPECIES).length;
 
   // Ticker text
   const topEntry = data?.leaders?.[0];
@@ -593,8 +666,8 @@ export default function CC0Masters() {
         animation:'scanline 8s linear infinite',opacity:0.7}}/>
 
       {/* ══ COMMUNITY BANNER ══ */}
-      <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:'7px 24px',
-        display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',justifyContent:'center'}}>
+      <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:mobile?'6px 12px':'7px 24px',
+        display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',justifyContent:'center'}}>
         <span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
           ▶ CHECK OUT OTHER COMMUNITY TOOLS HERE ▸
         </span>
@@ -619,15 +692,15 @@ export default function CC0Masters() {
       <header style={{background:'var(--bg2)',borderBottom:'2px solid var(--green1)',padding:'0',position:'relative'}}>
 
         {/* top bar */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 24px',
-          borderBottom:'1px solid var(--border)',background:'var(--bg)'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:mobile?'6px 12px':'10px 24px',
+          borderBottom:'1px solid var(--border)',background:'var(--bg)',flexWrap:'wrap',gap:4}}>
           <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text2)',letterSpacing:2}}>
             <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721 · CC0 · {data?.scannedBlock?`BLOCK #${data.scannedBlock.toLocaleString()}`:'LIVE'}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1}}>
+            {!mobile&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--text3)',letterSpacing:1}}>
               NEXT UPDATE: <span style={{color:'var(--text2)'}}>{Math.floor(nextRefreshIn/60)}:{String(nextRefreshIn%60).padStart(2,'0')}</span>
-            </span>
+            </span>}
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               <div style={{width:7,height:7,background:'var(--lime)',borderRadius:0,
                 boxShadow:'0 0 8px var(--lime), 0 0 16px rgba(124,232,50,0.4)',animation:'pulse 1.5s ease-in-out infinite'}}/>
@@ -637,7 +710,7 @@ export default function CC0Masters() {
         </div>
 
         {/* main header content */}
-        <div style={{padding:'24px 24px 20px',display:'flex',alignItems:'flex-end',gap:24,flexWrap:'wrap'}}>
+        <div style={{padding:mobile?'16px 12px 12px':'24px 24px 20px',display:'flex',alignItems:mobile?'flex-start':'flex-end',gap:mobile?12:24,flexWrap:'wrap'}}>
 
           {/* Logo block */}
           <div style={{flex:'0 0 auto',animation:'fadeUp 0.5s ease both'}}>
@@ -668,7 +741,7 @@ export default function CC0Masters() {
           </div>
 
           {/* Stats */}
-          <div style={{display:'flex',gap:6,flexWrap:'wrap',animation:'fadeUp 0.5s ease 80ms both'}}>
+          <div style={{display:mobile?'grid':'flex',gridTemplateColumns:mobile?'1fr 1fr':undefined,gap:6,flexWrap:'wrap',animation:'fadeUp 0.5s ease 80ms both',width:mobile?'100%':undefined}}>
             {([
               {label:'COLLECTORS',value:data?.totalOwners??liveOwners,color:'var(--lime)',icon:'◈'},
               {label:'SPECIES',value:TOTAL_SPECIES,color:'var(--bright)',icon:'◉'},
@@ -680,7 +753,7 @@ export default function CC0Masters() {
                 border:`1px solid ${color}25`,
                 padding:'14px 18px 12px',
                 position:'relative',
-                minWidth:96,
+                minWidth:mobile?0:96,
                 boxShadow:`0 4px 24px ${color}06, inset 0 1px 0 ${color}20`}}>
                 {/* top accent line */}
                 <div style={{position:'absolute',top:0,left:0,right:0,height:2,
@@ -707,7 +780,7 @@ export default function CC0Masters() {
           </div>
 
           {/* Actions (right side) */}
-          <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both'}}>
+          <div style={{marginLeft:mobile?0:'auto',width:mobile?'100%':undefined,display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both'}}>
             <button className="btn btn-primary" onClick={fetchLeaderboard} disabled={scanning||loading}
               style={{position:'relative',overflow:'hidden'}}>
               {loading?'↺ LOADING…':'↺ REFRESH'}
@@ -715,7 +788,7 @@ export default function CC0Masters() {
           </div>
         </div>
 
-        {data&&!scanning&&(
+        {data&&!scanning&&!mobile&&(
           <div style={{padding:'6px 24px 8px',fontFamily:'var(--ff-pixel)',fontSize:5.5,color:'var(--text3)',letterSpacing:1,
             borderTop:'1px solid var(--border)',display:'flex',gap:16,flexWrap:'wrap'}}>
             <span>DATA: {new Date(data.updatedAt).toUTCString().toUpperCase()}</span>
@@ -737,7 +810,7 @@ export default function CC0Masters() {
 
       {/* ══ SCAN PROGRESS ══ */}
       {scanning&&(
-        <div style={{background:'var(--bg2)',borderBottom:'2px solid var(--green2)',padding:'12px 24px',
+        <div style={{background:'var(--bg2)',borderBottom:'2px solid var(--green2)',padding:mobile?'10px 12px':'12px 24px',
           animation:'fadeIn 0.2s ease both'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:'var(--lime)',letterSpacing:2}}>
@@ -759,7 +832,7 @@ export default function CC0Masters() {
       )}
 
       {/* ══ MAIN CONTENT ══ */}
-      <main style={{padding:'20px 24px',maxWidth:1440,margin:'0 auto'}}>
+      <main style={{padding:mobile?'12px 12px':'20px 24px',maxWidth:1440,margin:'0 auto'}}>
 
         {/* PODIUM */}
         {!loading&&!error&&sorted.length>=3&&(
@@ -774,16 +847,17 @@ export default function CC0Masters() {
                 {(data?.leaders?.length??0).toLocaleString()} TOTAL COLLECTORS
               </div>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1.1fr 1fr',gap:8,alignItems:'end',marginBottom:8}}>
-              <PodiumCard entry={sorted[1]} rank={2} onClick={()=>setOpenRow(openRow===sorted[1].address?null:sorted[1].address)} isOpen={openRow===sorted[1].address}/>
-              <PodiumCard entry={sorted[0]} rank={1} onClick={()=>setOpenRow(openRow===sorted[0].address?null:sorted[0].address)} isOpen={openRow===sorted[0].address}/>
-              <PodiumCard entry={sorted[2]} rank={3} onClick={()=>setOpenRow(openRow===sorted[2].address?null:sorted[2].address)} isOpen={openRow===sorted[2].address}/>
+            <div style={{display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1.1fr 1fr',gap:8,alignItems:'end',marginBottom:8}}>
+              {mobile?<>
+                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address}/>
+                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address}/>
+                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address}/>
+              </>:<>
+                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address}/>
+                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address}/>
+                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address}/>
+              </>}
             </div>
-            {[sorted[0],sorted[1],sorted[2]].map(e=>openRow===e.address&&(
-              <div key={e.address} style={{border:'2px solid var(--green2)',borderTop:'none',animation:'slideDown 0.2s ease'}}>
-                <DetailPanel entry={e} images={images} registryData={registryData}/>
-              </div>
-            ))}
           </section>
         )}
 
@@ -804,7 +878,7 @@ export default function CC0Masters() {
         )}
 
         {/* RANKINGS TABLE */}
-        <section>
+        <div ref={rankingsRef}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:'var(--lime)',letterSpacing:3,
               textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
@@ -817,7 +891,7 @@ export default function CC0Masters() {
             <div className="px-border" style={{background:'var(--panel)',overflow:'hidden'}}>
               <table className="lb-table">
                 <thead><tr>{['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=><th key={h}>{h}</th>)}</tr></thead>
-                <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i}/>)}</tbody>
+                <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={mobile}/>)}</tbody>
               </table>
             </div>
           ):error?(
@@ -834,7 +908,7 @@ export default function CC0Masters() {
                 <table className="lb-table">
                   <thead>
                     <tr style={{background:'linear-gradient(90deg,var(--bg) 0%,var(--bg2) 100%)'}}>
-                      {['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=>(
+                      {(mobile?['#','WALLET','SPECIES','%','MISSING']:['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING']).map(h=>(
                         <th key={h} style={{borderRight:'1px solid var(--border)',letterSpacing:1.5,
                           background:'transparent'}}>{h}</th>
                       ))}
@@ -848,7 +922,7 @@ export default function CC0Masters() {
                       const variantArr=['gold','silver','bronze'] as const;
                       const pv=i<3?variantArr[i]:'green';
                       return [
-                        <tr key={entry.address} className={`lb-row${isOpen?' open':''}`}
+                        <tr key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}} className={`lb-row${isOpen?' open':''}`}
                           onClick={()=>setOpenRow(isOpen?null:entry.address)}
                           style={{
                             animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`,
@@ -857,7 +931,7 @@ export default function CC0Masters() {
                               :i===1?`linear-gradient(90deg,rgba(144,184,160,0.03) 0%,transparent 40%)`
                               :i===2?`linear-gradient(90deg,rgba(200,112,48,0.03) 0%,transparent 40%)`:'',
                           }}>
-                          <td style={{width:38,textAlign:'center',padding:'0 8px'}}>
+                          <td style={{width:mobile?28:38,textAlign:'center',padding:mobile?'0 4px':'0 8px'}}>
                             <div style={{
                               fontFamily:'var(--ff-pixel)',fontSize:i<3?13:9,color:rankColor,
                               textShadow:i<3?`0 0 10px ${rankColor}, 0 0 20px ${rankColor}60`:'none',
@@ -874,13 +948,13 @@ export default function CC0Masters() {
                               textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
                             <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,color:'var(--text2)',marginLeft:4}}>/{TOTAL_SPECIES}</span>
                           </td>
-                          <td style={{minWidth:90}}><ProgressBar pct={pct} variant={pv} height={5}/></td>
+                          {!mobile&&<td style={{minWidth:90}}><ProgressBar pct={pct} variant={pv} height={5}/></td>}
                           <td>
                             <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:pct>80?'var(--bright)':'var(--text)',
                               textShadow:pct>80?'0 0 8px rgba(168,255,64,0.4)':'none'}}>{entry.progress}</span>
                           </td>
-                          <td><span style={{fontFamily:'var(--ff-mono)',fontSize:12,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>
-                          <td><EnergyDots byEnergy={entry.byEnergy}/></td>
+                          {!mobile&&<td><span style={{fontFamily:'var(--ff-mono)',fontSize:12,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>}
+                          {!mobile&&<td><EnergyDots byEnergy={entry.byEnergy}/></td>}
                           <td>
                             <span style={{fontFamily:'var(--ff-pixel)',fontSize:6,letterSpacing:0.5,
                               color:entry.missing===0?'var(--lime)':entry.missing<10?'var(--amber)':'var(--text2)',
@@ -891,7 +965,7 @@ export default function CC0Masters() {
                             </span>
                           </td>
                         </tr>,
-                        isOpen&&<tr key={`${entry.address}-d`}><td colSpan={8} style={{padding:0}}>
+                        isOpen&&<tr key={`${entry.address}-d`}><td colSpan={mobile?5:8} style={{padding:0}}>
                           <DetailPanel entry={entry} images={images} registryData={registryData}/>
                         </td></tr>,
                       ];
@@ -901,11 +975,11 @@ export default function CC0Masters() {
               </div>
             </div>
           )}
-        </section>
+        </div>
       </main>
 
       {/* ══ FOOTER ══ */}
-      <footer style={{borderTop:'2px solid var(--green1)',background:'var(--bg2)',padding:'20px 24px',marginTop:32}}>
+      <footer style={{borderTop:'2px solid var(--green1)',background:'var(--bg2)',padding:mobile?'16px 12px':'20px 24px',marginTop:32}}>
         {/* second sprite parade (reversed speed) */}
         {Object.keys(images).length>0&&(
           <div style={{overflow:'hidden',marginBottom:16,padding:'8px 0',
@@ -920,7 +994,7 @@ export default function CC0Masters() {
           </div>
         )}
 
-        <div style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:'flex-end'}}>
+        <div style={{display:'flex',flexDirection:mobile?'column':'row',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:mobile?'flex-start':'flex-end'}}>
           <div>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
@@ -928,7 +1002,7 @@ export default function CC0Masters() {
               <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
             </div>
           </div>
-          <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:'flex-end'}}>
+          <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:mobile?'flex-start':'flex-end'}}>
             {/* CC0mon credit */}
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,letterSpacing:2,
               textShadow:'0 0 16px rgba(124,232,50,0.2)'}}>
@@ -942,7 +1016,7 @@ export default function CC0Masters() {
               </a>
             </div>
             {/* External links */}
-            <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',justifyContent:'flex-end'}}>
+            <div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',justifyContent:mobile?'flex-start':'flex-end'}}>
               {[
                 ['OPENSEA ▸','https://opensea.io/collection/cc0mon'],
                 ['ETHERSCAN ▸',`https://etherscan.io/address/${CC0_CONTRACT}`],

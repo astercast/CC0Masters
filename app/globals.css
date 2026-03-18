@@ -496,3 +496,41 @@ main {
   0%, 100% { box-shadow: none; }
   50% { box-shadow: inset 0 0 6px rgba(124,232,50,0.08); }
 }
+
+/* ══ MOBILE RESPONSIVE ══ */
+@media (max-width: 640px) {
+  /* Prevent body horizontal scroll */
+  body { overflow-x: hidden; }
+
+  /* Ticker — prevent overflow */
+  .ticker-wrap { overflow: hidden; }
+
+  /* Sprite parade — clip properly */
+  .sprite-parade-wrap { overflow: hidden; max-width: 100vw; }
+
+  /* Table — allow horizontal scroll */
+  .lb-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .lb-table th, .lb-table td { padding: 8px 8px; font-size: 7px; white-space: nowrap; }
+  .lb-table th { font-size: 5.5px; }
+
+  /* Detail panel — compact */
+  .detail-panel { padding: 12px; }
+
+  /* Podium — full width cards */
+  .podium-card { padding: 14px 12px 12px; }
+
+  /* Species grid — more columns on mobile */
+  .species-grid { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)) !important; }
+
+  /* Footer links wrap nicely */
+  footer a { font-size: 7px !important; }
+
+  /* Section header divider line */
+  .section-divider { display: none; }
+
+  /* Scrollbar hidden on mobile */
+  ::-webkit-scrollbar { display: none; }
+
+  /* Stat card value size */
+  .stat-value { font-size: 16px !important; }
+}

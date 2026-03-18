@@ -110,8 +110,8 @@ export async function saveLeaderboard(data: LeaderboardData) {
 export async function loadLeaderboard(): Promise<LeaderboardData | null> {
   try {
     const result = await get(BLOB_KEY, { access: 'private' });
-    if (!result || !result.stream) return null;
-    // Read the stream directly — this is the blob content
+    // get() returns { statusCode, stream, blob } — stream is null on 304
+    if (!result || result.statusCode !== 200 || !result.stream) return null;
     const reader = result.stream.getReader();
     const chunks: Uint8Array[] = [];
     while (true) {
@@ -121,8 +121,8 @@ export async function loadLeaderboard(): Promise<LeaderboardData | null> {
     }
     const total = chunks.reduce((a, c) => a + c.length, 0);
     const merged = new Uint8Array(total);
-    let off = 0;
-    for (const c of chunks) { merged.set(c, off); off += c.length; }
+    let offset = 0;
+    for (const c of chunks) { merged.set(c, offset); offset += c.length; }
     return JSON.parse(new TextDecoder().decode(merged));
   } catch { return null; }
 }

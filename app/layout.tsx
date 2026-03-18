@@ -5,32 +5,35 @@ const BASE_URL = 'https://cc0masters.vercel.app';
 
 export const metadata: Metadata = {
   title: "CC0MASTERS — Who Will Collect Them All?",
-  description: "Live leaderboard tracking which wallets are closest to collecting all 260 CC0mon species on Ethereum. 9,999 on-chain NFTs.",
+  description: "Live leaderboard tracking which wallets are closest to collecting all 260 CC0mon species on Ethereum. 9,999 on-chain NFTs. Updated hourly.",
   metadataBase: new URL(BASE_URL),
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: '/favicon.svg',
   },
   openGraph: {
     title: "CC0MASTERS — Who Will Collect Them All?",
-    description: "Live leaderboard tracking which wallets are closest to collecting all 260 CC0mon species on Ethereum. 9,999 on-chain NFTs.",
+    description: "Live leaderboard tracking which wallets are closest to collecting all 260 CC0mon species on Ethereum. 9,999 on-chain NFTs. Updated hourly.",
     siteName: "CC0MASTERS",
     url: BASE_URL,
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/api/og',
         width: 1200,
         height: 630,
-        alt: 'CC0MASTERS — CC0mon collector leaderboard',
+        alt: 'CC0MASTERS — Live CC0mon collector leaderboard on Ethereum',
       }
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: "CC0MASTERS — Who Will Collect Them All?",
-    description: "Live leaderboard tracking which wallets are closest to collecting all 260 CC0mon species on Ethereum.",
-    images: ['/og-image.png'],
+    description: "Live leaderboard for CC0mon collectors on Ethereum. 260 species. 9,999 on-chain NFTs. Who has the most?",
+    images: ['/api/og'],
   },
 };
 
@@ -38,6 +41,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5"/>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
         <link href="https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>

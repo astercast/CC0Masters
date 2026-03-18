@@ -753,7 +753,7 @@ export default function CC0Masters() {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:mobile?'6px 12px':'10px 24px',
           borderBottom:'1px solid var(--border)',background:'var(--bg)',flexWrap:'wrap',gap:4}}>
           <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text2)',letterSpacing:2}}>
-            <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721 · CC0 · {data?.scannedBlock?`BLOCK #${data.scannedBlock.toLocaleString()}`:'LIVE'}
+            <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721{data?.scannedBlock&&!mobile?` · BLOCK #${data.scannedBlock.toLocaleString()}`:''}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
             {!mobile&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text3)',letterSpacing:1}}>
@@ -1153,7 +1153,9 @@ export default function CC0Masters() {
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:16,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
               ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
-              <span style={{color:'var(--border2)'}}>{CC0_CONTRACT}</span>
+              <span style={{color:'var(--border2)',wordBreak:'break-all',fontSize:mobile?10:14}}>
+                {mobile?CC0_CONTRACT.slice(0,10)+'…'+CC0_CONTRACT.slice(-8):CC0_CONTRACT}
+              </span>
             </div>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:12,alignItems:mobile?'flex-start':'flex-end'}}>

@@ -46,7 +46,7 @@ html { scroll-behavior: smooth; }
 
 body {
   background:
-    linear-gradient(rgba(3,6,3,0.93), rgba(3,6,3,0.93)),
+    linear-gradient(rgba(3,6,3,0.77), rgba(3,6,3,0.93)),
     url('/bg.png') center center / cover fixed;
   color: var(--text);
   font-family: var(--ff-mono);

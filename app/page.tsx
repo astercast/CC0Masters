@@ -33,13 +33,13 @@ async function resolveENS(address: string): Promise<string | null> {
   } catch { ensCache.set(key, null); return null; }
 }
 
-function AddressDisplay({ address }: { address: string }) {
+function AddressDisplay({ address, onNotify }: { address: string; onNotify?: ()=>void }) {
   const [ens, setEns] = useState<string | null>(ensCache.get(address.toLowerCase()) ?? null);
   useEffect(() => { if (ens !== null) return; resolveENS(address).then(setEns); }, [address, ens]);
   const display = ens ?? (address.slice(0,6) + '…' + address.slice(-4));
   return (
     <a href={`https://opensea.io/${address}`} target="_blank" rel="noreferrer"
-      onClick={e=>e.stopPropagation()} title={address}
+      onClick={e=>{ e.stopPropagation(); onNotify?.(); }} title={address}
       style={{ fontFamily:'var(--ff-mono)', fontSize:12,
         color: ens ? 'var(--bright)' : 'var(--text)',
         textDecoration:'none',
@@ -159,15 +159,24 @@ async function runOnChainScan(
   }
   setPhase('PHASE 3/3 — BUILDING LEADERBOARD'); setPct(82); setDetail('Computing dex completion...');
   // Build name->speciesNum map from registry (the #NNN in token names is a serial, NOT species number)
+  // Build name->num map. Some species share names (e.g. "Vilewing" is #86 AND #229,
+  // "Gazebleed" is #215 AND #228). Use "name|energy" as primary key to disambiguate,
+  // and plain name as fallback for when energy isn't available.
   const nameToNum=new Map<string,number>();
   for (const [numStr,info] of Object.entries(registryData)) {
-    if (info.name) nameToNum.set(info.name.toLowerCase(),parseInt(numStr));
+    if (!info.name) continue;
+    const n = parseInt(numStr);
+    nameToNum.set(info.name.toLowerCase(), n); // plain name (last one wins for dupes)
+    if (info.energy) nameToNum.set(`${info.name.toLowerCase()}|${info.energy.toLowerCase()}`, n);
   }
   // Cache on-chain images (data URIs from tokenURI) — avoids external image requests entirely
   const onChainImages: Record<string,{svg:string;png:string;name:string}> = {};
   for (const [,sp] of tokenSpecies) {
     if (!sp.image) continue;
-    const numStr = Object.keys(registryData).find(k => registryData[k].name?.toLowerCase() === sp.speciesName.toLowerCase());
+    const numStr = Object.keys(registryData).find(k => 
+      registryData[k].name?.toLowerCase() === sp.speciesName.toLowerCase() &&
+      (!registryData[k].energy || registryData[k].energy?.toLowerCase() === sp.energy.toLowerCase())
+    ) ?? Object.keys(registryData).find(k => registryData[k].name?.toLowerCase() === sp.speciesName.toLowerCase());
     if (numStr && !onChainImages[numStr]) {
       onChainImages[numStr] = { svg: sp.image, png: sp.image, name: sp.speciesName };
     }
@@ -178,7 +187,8 @@ async function runOnChainScan(
   // Build energy map from decoded token data
   const speciesEnergy=new Map<number,string>();
   for (const [,sp] of tokenSpecies) {
-    const num=nameToNum.get(sp.speciesName.toLowerCase());
+    const energyKey2 = `${sp.speciesName.toLowerCase()}|${sp.energy.toLowerCase()}`;
+    const num=nameToNum.get(energyKey2) ?? nameToNum.get(sp.speciesName.toLowerCase());
     if (num&&!speciesEnergy.has(num)) speciesEnergy.set(num,sp.energy);
   }
   const allSpecies=Array.from({length:TOTAL_SPECIES},(_,i)=>i+1).map(n=>({
@@ -192,7 +202,8 @@ async function runOnChainScan(
     for (const tid of tokenIds) {
       const sp=tokenSpecies.get(tid);
       if (!sp) continue;
-      const num=nameToNum.get(sp.speciesName.toLowerCase());
+      const energyKey = `${sp.speciesName.toLowerCase()}|${sp.energy.toLowerCase()}`;
+      const num = nameToNum.get(energyKey) ?? nameToNum.get(sp.speciesName.toLowerCase());
       if (num) cs.add(num);
     }
     const byEnergy:Record<string,{collected:number;total:number}>={};
@@ -397,11 +408,12 @@ function SkeletonRow({ mobile }: { mobile: boolean }) {
 }
 
 function DetailPanel({
-  entry, images, registryData,
+  entry, images, registryData, onNotify,
 }: {
   entry: LeaderboardEntry;
   images: Record<string,{svg:string;png:string;name:string}>;
   registryData: Record<string,{name:string;energy:string}>;
+  onNotify?: ()=>void;
 }) {
   const [tab, setTab] = useState<'energy'|'dex'>('dex');
 
@@ -430,6 +442,7 @@ function DetailPanel({
           </div>
         ))}
         <a href={`https://opensea.io/${entry.address}`} target="_blank" rel="noreferrer"
+          onClick={()=>onNotify?.()}
           style={{background:'var(--bg2)',border:'1px solid var(--border)',padding:'10px 12px',textDecoration:'none',
             display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',
             color:'var(--text2)',fontSize:9,fontFamily:'var(--ff-pixel)',letterSpacing:1,gap:4,transition:'all 0.1s'}}
@@ -517,6 +530,11 @@ function useMobile() {
 
 export default function CC0Masters() {
   const mobile = useMobile();
+  const [toast,setToast] = useState<string|null>(null);
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(()=>setToast(null), 2200);
+  };
   const [data,setData]                   = useState<LeaderboardData|null>(null);
   const [loading,setLoading]             = useState(true);
   const [error,setError]                 = useState<string|null>(null);
@@ -625,13 +643,18 @@ export default function CC0Masters() {
 
   // Force-correct the known full-dex holder (species 229 "Vilewing" was
   // mismapped by old scan code — CC0mon API confirms they have all 260)
+  // Force-correct known missing species for the full-dex holder.
+  // "Vilewing" = species 86 (Bug) AND 229 (Underworld) — same name, different energy
+  // "Gazebleed" = species 215 (Underworld) AND 228 (Underworld) — same name, different energy
+  // Old nameToNum map collision dropped one of each pair. Fixed in scan but blob has stale data.
   const FULL_DEX_HOLDER = '0x1ea0fca88df648041acda284014fe2a84f78dd26';
+  const FORCED_SPECIES = [86, 215, 228, 229]; // both Vileings + both Gazeblee ds
   const correctedLeaders = (data?.leaders??[]).map(e => {
     if (e.address.toLowerCase() === FULL_DEX_HOLDER) {
-      // Ensure species 229 is in their list
       const nums = e.collectedSpeciesNums ?? [];
-      const fixed = nums.includes(229) ? nums : [...nums, 229];
-      return { ...e, collectedSpeciesNums: fixed, collected: 260, missing: 0, progress: '100.0%' };
+      const fixed = [...new Set([...nums, ...FORCED_SPECIES])];
+      const collected = Math.max(fixed.length, 260);
+      return { ...e, collectedSpeciesNums: fixed, collected, missing: 260 - collected, progress: ((collected/260)*100).toFixed(1)+'%' };
     }
     return e;
   });
@@ -664,6 +687,21 @@ export default function CC0Masters() {
       <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
         background:'linear-gradient(180deg,transparent,rgba(124,232,50,0.06),transparent)',
         animation:'scanline 8s linear infinite',opacity:0.7}}/>
+
+      {/* Toast notification */}
+      {toast&&(
+        <div style={{
+          position:'fixed',bottom:28,left:'50%',transform:'translateX(-50%)',
+          zIndex:99999,pointerEvents:'none',
+          background:'var(--panel)',border:'1px solid var(--lime)',
+          boxShadow:'0 0 24px rgba(124,232,50,0.3), 0 4px 16px rgba(0,0,0,0.6)',
+          padding:'10px 20px',display:'flex',alignItems:'center',gap:10,
+          animation:'fadeUp 0.2s ease both',
+        }}>
+          <span style={{fontSize:16}}>🌊</span>
+          <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)',letterSpacing:1}}>{toast}</span>
+        </div>
+      )}
 
       {/* ══ COMMUNITY BANNER ══ */}
       <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:mobile?'6px 12px':'7px 24px',
@@ -942,7 +980,7 @@ export default function CC0Masters() {
                               {i+1}
                             </div>
                           </td>
-                          <td><AddressDisplay address={entry.address}/></td>
+                          <td><AddressDisplay address={entry.address} onNotify={()=>showToast('Opening OpenSea…')}/></td>
                           <td>
                             <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?15:12,color:rankColor,
                               textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
@@ -966,7 +1004,7 @@ export default function CC0Masters() {
                           </td>
                         </tr>,
                         isOpen&&<tr key={`${entry.address}-d`}><td colSpan={mobile?5:8} style={{padding:0}}>
-                          <DetailPanel entry={entry} images={images} registryData={registryData}/>
+                          <DetailPanel entry={entry} images={images} registryData={registryData} onNotify={()=>showToast('Opening OpenSea…')}/>
                         </td></tr>,
                       ];
                     })}

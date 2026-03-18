@@ -262,10 +262,14 @@ function EnergyDots({ byEnergy }: { byEnergy: LeaderboardEntry['byEnergy'] }) {
   </div>;
 }
 
-/* Sprite — uses native browser img loading. No JS preload needed.
-   The browser handles connection pooling and caching natively. */
+/* Session-level cache — survives React remounts within a page session */
+const loadedUrls = new Set<string>();
+
 function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string; name:string; size?:number; dimmed?:boolean; className?:string }) {
-  const [status, setStatus] = useState<'loading'|'ok'|'err'>(src?'loading':'err');
+  // If we've already loaded this URL this session, start as 'ok' immediately — no shimmer
+  const [status, setStatus] = useState<'loading'|'ok'|'err'>(
+    !src ? 'err' : loadedUrls.has(src) ? 'ok' : 'loading'
+  );
 
   if (!src) return (
     <div style={{width:size,height:size,display:'flex',alignItems:'center',justifyContent:'center',
@@ -280,7 +284,7 @@ function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string
         justifyContent:'center',fontSize:size*0.3,color:'var(--text3)',opacity:dimmed?0.15:0.4}}>?</div>}
       <img src={src} alt={name} width={size} height={size}
         loading="eager" decoding="async"
-        onLoad={()=>setStatus('ok')}
+        onLoad={()=>{ loadedUrls.add(src); setStatus('ok'); }}
         onError={()=>setStatus('err')}
         style={{imageRendering:'pixelated',display:'block',
           opacity:status==='ok'?(dimmed?0.18:1):0,
@@ -538,7 +542,7 @@ export default function CC0Masters() {
   const [lastRefreshed,setLastRefreshed] = useState<Date|null>(null);
   const [nextRefreshIn,setNextRefreshIn] = useState(300);
   const scanAbort = useRef(false);
-  const rowRefs = useRef<Record<string,HTMLTableRowElement|null>>({});
+  const rowRefs = useRef<Record<string,HTMLElement|null>>({});
   const rankingsRef = useRef<HTMLDivElement|null>(null);
 
   const handlePodiumClick = (address: string) => {
@@ -735,29 +739,6 @@ export default function CC0Masters() {
         </div>
       )}
 
-      {/* ══ COMMUNITY BANNER ══ */}
-      <div style={{background:'var(--bg)',borderBottom:'1px solid var(--border)',padding:mobile?'6px 12px':'7px 24px',
-        display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',justifyContent:'center'}}>
-        <span style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
-          ▶ CHECK OUT OTHER COMMUNITY TOOLS HERE ▸
-        </span>
-        <span style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--text2)',letterSpacing:1,whiteSpace:'nowrap'}}>
-          BY{' '}
-          <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
-            style={{color:'var(--lime)',textDecoration:'none',letterSpacing:1}}
-            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
-            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}>
-            @SPELL_WEB3
-          </a>
-          {':'}
-        </span>
-        <a href="https://cc0mon-community.netlify.app/" target="_blank" rel="noreferrer"
-          className="btn btn-filter"
-          style={{fontFamily:'var(--ff-pixel)',fontSize:13,letterSpacing:1,textDecoration:'none',padding:'5px 12px'}}>
-          🌐 COMMUNITY
-        </a>
-      </div>
-
       {/* ══ HEADER ══ */}
       <header style={{background:'var(--bg2)',borderBottom:'2px solid var(--green1)',padding:'0',position:'relative'}}>
 
@@ -851,7 +832,7 @@ export default function CC0Masters() {
 
           {/* Actions (right side) */}
           <div style={{marginLeft:mobile?0:'auto',width:mobile?'100%':undefined,display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both',flexWrap:'wrap'}}>
-            {!mobile&&<button className="btn" onClick={()=>router.push('/library')} style={{letterSpacing:1}}>📖 CC0MON LIBRARY</button>}
+            <button className="btn" onClick={()=>router.push('/library')} style={{letterSpacing:1,fontSize:mobile?10:undefined}}>📖 {mobile?'LIBRARY':'CC0MON LIBRARY'}</button>
             <button className="btn btn-primary" onClick={fetchLeaderboard} disabled={scanning||loading}
               style={{position:'relative',overflow:'hidden'}}>
               {loading?'↺ LOADING…':'↺ REFRESH'}
@@ -976,10 +957,25 @@ export default function CC0Masters() {
 
           {loading?(
             <div className="px-border" style={{background:'var(--panel)',overflow:'hidden'}}>
-              <table className="lb-table">
-                <thead><tr>{['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=><th key={h}>{h}</th>)}</tr></thead>
-                <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={mobile}/>)}</tbody>
-              </table>
+              {mobile?(
+                <div>
+                  {Array.from({length:6}).map((_,i)=>(
+                    <div key={i} style={{padding:'10px 12px',borderBottom:'1px solid var(--border)',display:'flex',flexDirection:'column',gap:8}}>
+                      <div style={{display:'flex',gap:8}}>
+                        <div className="skeleton" style={{width:22,height:14}}/>
+                        <div className="skeleton" style={{flex:1,height:14}}/>
+                        <div className="skeleton" style={{width:60,height:14}}/>
+                      </div>
+                      <div className="skeleton" style={{height:4,width:'100%'}}/>
+                    </div>
+                  ))}
+                </div>
+              ):(
+                <table className="lb-table">
+                  <thead><tr>{['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+                  <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={false}/>)}</tbody>
+                </table>
+              )}
             </div>
           ):error?(
             <div className="px-border" style={{background:'var(--panel)',padding:'60px 24px',textAlign:'center'}}>
@@ -991,75 +987,139 @@ export default function CC0Masters() {
             </div>
           ):(
             <div className="px-border" style={{background:'var(--panel)',overflow:'hidden',animation:'fadeUp 0.4s ease both'}}>
-              <div style={{overflowX:'auto'}}>
-                <table className="lb-table">
-                  <thead>
-                    <tr style={{background:'linear-gradient(90deg,var(--bg) 0%,var(--bg2) 100%)'}}>
-                      {(mobile?['#','WALLET','SPECIES','%','MISSING']:['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING']).map(h=>(
-                        <th key={h} style={{borderRight:'1px solid var(--border)',letterSpacing:1.5,
-                          background:'transparent'}}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sorted.map((entry,i)=>{
-                      const pct=parseFloat(entry.progress);
-                      const isOpen=openRow===entry.address;
-                      const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text2)';
-                      const variantArr=['gold','silver','bronze'] as const;
-                      const pv=i<3?variantArr[i]:'green';
-                      return [
-                        <tr key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}} className={`lb-row${isOpen?' open':''}`}
-                          onClick={()=>setOpenRow(isOpen?null:entry.address)}
+              {mobile?(
+                /* ── MOBILE: card list, no horizontal scroll ── */
+                <div>
+                  {sorted.map((entry,i)=>{
+                    const pct=parseFloat(entry.progress);
+                    const isOpen=openRow===entry.address;
+                    const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text2)';
+                    const variantArr=['gold','silver','bronze'] as const;
+                    const pv=i<3?variantArr[i]:'green';
+                    return (
+                      <div key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}}>
+                        <div onClick={()=>setOpenRow(isOpen?null:entry.address)}
                           style={{
-                            animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`,
+                            padding:'10px 12px',
+                            borderBottom:'1px solid var(--border)',
                             borderLeft:i<3?`3px solid ${rankColor}`:'3px solid transparent',
-                            background:i===0?`linear-gradient(90deg,rgba(255,208,64,0.04) 0%,transparent 40%)`
-                              :i===1?`linear-gradient(90deg,rgba(144,184,160,0.03) 0%,transparent 40%)`
-                              :i===2?`linear-gradient(90deg,rgba(200,112,48,0.03) 0%,transparent 40%)`:'',
+                            background:isOpen?'rgba(124,232,50,0.04)':i===0?`linear-gradient(90deg,rgba(255,208,64,0.04),transparent)`
+                              :i===1?`linear-gradient(90deg,rgba(144,184,160,0.03),transparent)`
+                              :i===2?`linear-gradient(90deg,rgba(200,112,48,0.03),transparent)`:'',
+                            cursor:'pointer',
+                            animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`,
                           }}>
-                          <td style={{width:mobile?28:38,textAlign:'center',padding:mobile?'0 4px':'0 8px'}}>
-                            <div style={{
-                              fontFamily:'var(--ff-pixel)',fontSize:i<3?17:13,color:rankColor,
-                              textShadow:i<3?`0 0 10px ${rankColor}, 0 0 20px ${rankColor}60`:'none',
-                              background:i<3?`${rankColor}10`:'transparent',
-                              border:i<3?`1px solid ${rankColor}30`:'none',
-                              padding:i<3?'3px 6px':'2px',
-                              display:'inline-block',minWidth:24,textAlign:'center'}}>
+                          {/* Row 1: rank + address + badge */}
+                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:rankColor,
+                              textShadow:i<3?`0 0 8px ${rankColor}`:'none',
+                              minWidth:22,textAlign:'center',flexShrink:0}}>
                               {i+1}
+                            </span>
+                            <div style={{flex:1,overflow:'hidden'}}>
+                              <AddressDisplay address={entry.address}/>
                             </div>
-                          </td>
-                          <td><AddressDisplay address={entry.address}/></td>
-                          <td>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
-                              textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginLeft:4}}>/{TOTAL_SPECIES}</span>
-                          </td>
-                          {!mobile&&<td style={{minWidth:90}}><ProgressBar pct={pct} variant={pv} height={5}/></td>}
-                          <td>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:pct>80?'var(--bright)':'var(--text)',
-                              textShadow:pct>80?'0 0 8px rgba(168,255,64,0.4)':'none'}}>{entry.progress}</span>
-                          </td>
-                          {!mobile&&<td><span style={{fontFamily:'var(--ff-mono)',fontSize:16,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>}
-                          {!mobile&&<td><EnergyDots byEnergy={entry.byEnergy}/></td>}
-                          <td>
-                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,letterSpacing:0.5,
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:10,letterSpacing:0.5,flexShrink:0,
                               color:entry.missing===0?'var(--lime)':entry.missing<10?'var(--amber)':'var(--text2)',
                               border:`1px solid ${entry.missing===0?'var(--green2)':entry.missing<10?'rgba(255,160,64,0.4)':'var(--border)'}`,
                               background:entry.missing===0?'rgba(124,232,50,0.08)':'transparent',
                               padding:'2px 6px'}}>
-                              {entry.missing===0?'✓ COMPLETE':`${entry.missing} LEFT`}
+                              {entry.missing===0?'✓ FULL':`${entry.missing} LEFT`}
                             </span>
-                          </td>
-                        </tr>,
-                        isOpen&&<tr key={`${entry.address}-d`}><td colSpan={mobile?5:8} style={{padding:0}}>
+                          </div>
+                          {/* Row 2: progress bar + species/pct */}
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <div style={{flex:1}}>
+                              <ProgressBar pct={pct} variant={pv} height={4}/>
+                            </div>
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:rankColor,flexShrink:0,
+                              textShadow:i<3?`0 0 6px ${rankColor}60`:'none'}}>
+                              {entry.collected}<span style={{fontSize:10,color:'var(--text3)',marginLeft:3}}>/{TOTAL_SPECIES}</span>
+                            </span>
+                            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:pct>80?'var(--bright)':'var(--text2)',flexShrink:0}}>
+                              {entry.progress}
+                            </span>
+                          </div>
+                        </div>
+                        {isOpen&&<div style={{padding:0}}>
                           <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
-                        </td></tr>,
-                      ];
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        </div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ):(
+                /* ── DESKTOP: full table ── */
+                <div style={{overflowX:'auto'}}>
+                  <table className="lb-table">
+                    <thead>
+                      <tr style={{background:'linear-gradient(90deg,var(--bg) 0%,var(--bg2) 100%)'}}>
+                        {['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=>(
+                          <th key={h} style={{borderRight:'1px solid var(--border)',letterSpacing:1.5,
+                            background:'transparent'}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.map((entry,i)=>{
+                        const pct=parseFloat(entry.progress);
+                        const isOpen=openRow===entry.address;
+                        const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text2)';
+                        const variantArr=['gold','silver','bronze'] as const;
+                        const pv=i<3?variantArr[i]:'green';
+                        return [
+                          <tr key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}} className={`lb-row${isOpen?' open':''}`}
+                            onClick={()=>setOpenRow(isOpen?null:entry.address)}
+                            style={{
+                              animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`,
+                              borderLeft:i<3?`3px solid ${rankColor}`:'3px solid transparent',
+                              background:i===0?`linear-gradient(90deg,rgba(255,208,64,0.04) 0%,transparent 40%)`
+                                :i===1?`linear-gradient(90deg,rgba(144,184,160,0.03) 0%,transparent 40%)`
+                                :i===2?`linear-gradient(90deg,rgba(200,112,48,0.03) 0%,transparent 40%)`:'',
+                            }}>
+                            <td style={{width:38,textAlign:'center',padding:'0 8px'}}>
+                              <div style={{
+                                fontFamily:'var(--ff-pixel)',fontSize:i<3?17:13,color:rankColor,
+                                textShadow:i<3?`0 0 10px ${rankColor}, 0 0 20px ${rankColor}60`:'none',
+                                background:i<3?`${rankColor}10`:'transparent',
+                                border:i<3?`1px solid ${rankColor}30`:'none',
+                                padding:i<3?'3px 6px':'2px',
+                                display:'inline-block',minWidth:24,textAlign:'center'}}>
+                                {i+1}
+                              </div>
+                            </td>
+                            <td><AddressDisplay address={entry.address}/></td>
+                            <td>
+                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
+                                textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
+                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginLeft:4}}>/{TOTAL_SPECIES}</span>
+                            </td>
+                            <td style={{minWidth:90}}><ProgressBar pct={pct} variant={pv} height={5}/></td>
+                            <td>
+                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:pct>80?'var(--bright)':'var(--text)',
+                                textShadow:pct>80?'0 0 8px rgba(168,255,64,0.4)':'none'}}>{entry.progress}</span>
+                            </td>
+                            <td><span style={{fontFamily:'var(--ff-mono)',fontSize:16,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>
+                            <td><EnergyDots byEnergy={entry.byEnergy}/></td>
+                            <td>
+                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,letterSpacing:0.5,
+                                color:entry.missing===0?'var(--lime)':entry.missing<10?'var(--amber)':'var(--text2)',
+                                border:`1px solid ${entry.missing===0?'var(--green2)':entry.missing<10?'rgba(255,160,64,0.4)':'var(--border)'}`,
+                                background:entry.missing===0?'rgba(124,232,50,0.08)':'transparent',
+                                padding:'2px 6px'}}>
+                                {entry.missing===0?'✓ COMPLETE':`${entry.missing} LEFT`}
+                              </span>
+                            </td>
+                          </tr>,
+                          isOpen&&<tr key={`${entry.address}-d`}><td colSpan={8} style={{padding:0}}>
+                            <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
+                          </td></tr>,
+                        ];
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1121,6 +1181,26 @@ export default function CC0Masters() {
           </div>
         </div>
 
+        {/* Community tools */}
+        <div style={{marginTop:16,paddingTop:14,borderTop:'1px solid var(--border)',
+          display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+          <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:1,whiteSpace:'nowrap'}}>
+            ▶ OTHER COMMUNITY TOOLS BY{' '}
+            <a href="https://x.com/spell_web3" target="_blank" rel="noreferrer"
+              style={{color:'var(--lime)',textDecoration:'none'}}
+              onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color='var(--glow)'}
+              onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color='var(--lime)'}>
+              @SPELL_WEB3
+            </a>
+            {':'}
+          </span>
+          <a href="https://cc0mon-community.netlify.app/" target="_blank" rel="noreferrer"
+            className="btn btn-filter"
+            style={{fontSize:11,textDecoration:'none',padding:'4px 10px'}}>
+            🌐 COMMUNITY
+          </a>
+        </div>
+
         {/* Hidden admin section */}
         <div style={{marginTop:20,paddingTop:14,borderTop:'1px solid var(--border)'}}>
           <details style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text3)'}}>
@@ -1154,9 +1234,7 @@ export default function CC0Masters() {
               @ASTER0X
             </a>
           </div>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--text3)',letterSpacing:1,opacity:0.5}}>
-            CC0 · NO RIGHTS RESERVED · BUILD BY THE COMMUNITY
-          </div>
+
         </div>
       </footer>
     </div>

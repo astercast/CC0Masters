@@ -48,16 +48,19 @@ function ConfirmDlg({url,onOk,onNo}:{url:string;onOk:()=>void;onNo:()=>void}) {
   );
 }
 
+/* ── Session cache — same URL = instant render after first load ── */
+const libLoadedUrls = new Set<string>();
+
 /* ── Sprite ── */
 function Sprite({src,name,size=56,dimmed=false}:{src:string;name:string;size?:number;dimmed?:boolean}) {
-  const [s,setS]=useState<'l'|'ok'|'err'>(src?'l':'err');
+  const [s,setS]=useState<'l'|'ok'|'err'>(!src?'err':libLoadedUrls.has(src)?'ok':'l');
   return (
     <div style={{width:size,height:size,position:'relative',flexShrink:0,imageRendering:'pixelated'}}>
       {s==='l'&&<div className="skeleton" style={{position:'absolute',inset:0}}/>}
       {s==='err'&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
         justifyContent:'center',fontSize:size*0.28,color:'var(--text3)',opacity:0.4}}>?</div>}
       {src&&<img src={src} alt={name} width={size} height={size} loading="eager" decoding="async"
-        onLoad={()=>setS('ok')} onError={()=>setS('err')}
+        onLoad={()=>{ libLoadedUrls.add(src); setS('ok'); }} onError={()=>setS('err')}
         style={{imageRendering:'pixelated',display:'block',
           opacity:s==='ok'?(dimmed?0.2:1):0,transition:'opacity 0.15s',
           filter:dimmed?'grayscale(1)':undefined}}/>}

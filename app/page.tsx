@@ -670,21 +670,6 @@ export default function CC0Masters() {
     });
   const completeCount = correctedLeaders.filter(l=>l.collected===TOTAL_SPECIES).length;
 
-  // Ticker text
-  const topEntry = data?.leaders?.[0];
-  const sep = '   ◆   ';
-  const tickerText = topEntry
-    ? [
-        `▶ LEADER: ${topEntry.address.slice(0,6)}…${topEntry.address.slice(-4)}`,
-        `${topEntry.collected}/${TOTAL_SPECIES} SPECIES`,
-        `${topEntry.progress} COMPLETE`,
-        `${(data?.totalOwners??0).toLocaleString()} TOTAL COLLECTORS`,
-        `${completeCount} FULL DEX HOLDERS`,
-        `CC0MON ERC-721`,
-        `ETHEREUM MAINNET`,
-        `AUTO-UPDATES HOURLY`,
-      ].join(sep) + sep
-    : ['CC0MASTERS','LIVE COLLECTOR LEADERBOARD','ETHEREUM MAINNET','ERC-721','CC0','WHO WILL COLLECT THEM ALL'].join(sep) + sep;
 
   return (
     <div style={{background:'var(--black)',color:'var(--text)',minHeight:'100vh',fontFamily:'var(--ff-mono)'}}>
@@ -752,8 +737,8 @@ export default function CC0Masters() {
         {/* top bar */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:mobile?'6px 12px':'10px 24px',
           borderBottom:'1px solid var(--border)',background:'var(--bg)',flexWrap:'wrap',gap:4}}>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text2)',letterSpacing:2}}>
-            <span style={{color:'var(--green2)'}}>▶</span> ETHEREUM MAINNET · ERC-721{data?.scannedBlock&&!mobile?` · BLOCK #${data.scannedBlock.toLocaleString()}`:''}
+          <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?9:14,color:'var(--text2)',letterSpacing:mobile?1:2}}>
+            <span style={{color:'var(--green2)'}}>▶</span>{mobile?' ETH':' ETHEREUM MAINNET · ERC-721'}{data?.scannedBlock&&!mobile?` · BLOCK #${data.scannedBlock.toLocaleString()}`:''}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
             {!mobile&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text3)',letterSpacing:1}}>
@@ -856,13 +841,6 @@ export default function CC0Masters() {
           </div>
         )}
       </header>
-
-      {/* ══ TICKER ══ */}
-      <div className="ticker-wrap">
-        <div className="ticker-content">
-          {tickerText.repeat(3)}
-        </div>
-      </div>
 
       {/* ══ SPRITE PARADE ══ */}
       {Object.keys(images).length > 0 && <SpriteParade images={images}/>}
@@ -1151,10 +1129,10 @@ export default function CC0Masters() {
         <div style={{display:'flex',flexDirection:mobile?'column':'row',justifyContent:'space-between',flexWrap:'wrap',gap:12,alignItems:mobile?'flex-start':'flex-end'}}>
           <div>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:16,color:'var(--text2)',marginBottom:6,letterSpacing:2}}>CC0MASTERS</div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:'var(--text3)',lineHeight:2.2,letterSpacing:1}}>
-              ALL DATA ON-CHAIN · ETHEREUM MAINNET<br/>
-              <span style={{color:'var(--border2)',wordBreak:'break-all',fontSize:mobile?10:14}}>
-                {mobile?CC0_CONTRACT.slice(0,10)+'…'+CC0_CONTRACT.slice(-8):CC0_CONTRACT}
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?9:14,color:'var(--text3)',lineHeight:2.2,letterSpacing:1,maxWidth:'100%',overflow:'hidden'}}>
+              {mobile?'ON-CHAIN · ETH MAINNET':'ALL DATA ON-CHAIN · ETHEREUM MAINNET'}<br/>
+              <span style={{color:'var(--border2)',wordBreak:'break-all',fontSize:mobile?8:12}}>
+                {CC0_CONTRACT}
               </span>
             </div>
           </div>

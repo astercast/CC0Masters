@@ -144,8 +144,6 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
   allSpecies:Species[]; onClose:()=>void; onNav:(n:number)=>void;
 }) {
   const [desc,setDesc]=useState('');
-  const [sales,setSales]=useState<any[]>([]);
-  const [salesLoading,setSalesLoading]=useState(true);
   const col=EC[sp.energy]||'#7ee832';
   const rc=RC[sp.rarity]||'#90c880';
   const supply=SUPPLY_EST[sp.rarity]||Math.round(9999/260);
@@ -157,28 +155,15 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
   const next=idx<allSpecies.length-1?allSpecies[idx+1]:null;
 
   useEffect(()=>{
-    setDesc(''); setSales([]); setSalesLoading(true);
+    setDesc('');
     fetch('/api/registry').then(r=>r.json()).then(d=>{
       const tid=d.images?.[String(sp.number)]?.tokenId;
-      if (!tid) { setSalesLoading(false); return; }
+      if (!tid) return;
       // description
       fetch(`https://api.cc0mon.com/cc0mon/${tid}`).then(r=>r.json())
         .then(t=>setDesc(t.description||'')).catch(()=>{});
-      // sales
-      fetch(`https://api.opensea.io/api/v2/events/chain/ethereum/contract/${CC0_CONTRACT}/nfts/${tid}?event_type=sale&limit=5`,
-        {headers:{accept:'application/json'}})
-        .then(r=>r.json())
-        .then(data=>{
-          setSales((data.asset_events||[]).map((e:any)=>({
-            price:e.payment?(parseFloat(e.payment.quantity)/1e18).toFixed(4)+' ETH':'—',
-            from:e.seller?e.seller.slice(0,6)+'…'+e.seller.slice(-4):'—',
-            to:e.buyer?e.buyer.slice(0,6)+'…'+e.buyer.slice(-4):'—',
-            date:e.closing_date?new Date(e.closing_date*1000).toLocaleDateString():'—',
-            tx:e.transaction||'',
-          })));
-          setSalesLoading(false);
-        }).catch(()=>setSalesLoading(false));
-    }).catch(()=>setSalesLoading(false));
+
+    }).catch(()=>{});
   },[sp.number]);
 
   // keyboard nav
@@ -333,10 +318,10 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
         <div style={{height:1,background:`linear-gradient(90deg,transparent,var(--border),transparent)`,margin:'0 32px'}}/>
 
         {/* ── TWO COLUMN LOWER ── */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0,padding:'20px 32px 24px'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:0,padding:'20px 32px 24px'}}>
 
           {/* Holders */}
-          <div style={{paddingRight:16,borderRight:'1px solid var(--border)'}}>
+          <div style={{paddingRight:0}}>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--lime)',
               letterSpacing:2,marginBottom:10,display:'flex',alignItems:'center',gap:8}}>
               <span style={{color:'var(--green2)',fontSize:8}}>▶</span> HOLDERS ({holders.length})
@@ -370,49 +355,6 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
             )}
           </div>
 
-          {/* Sales */}
-          <div style={{paddingLeft:16}}>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--lime)',
-              letterSpacing:2,marginBottom:10,display:'flex',alignItems:'center',gap:8}}>
-              <span style={{color:'var(--green2)',fontSize:8}}>▶</span> RECENT SALES
-            </div>
-            {salesLoading?(
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',padding:'10px 0'}}>
-                LOADING…
-              </div>
-            ):sales.length===0?(
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
-                padding:'10px 0',lineHeight:2.5}}>
-                NO RECENT SALES<br/>
-                <button className="btn btn-filter" style={{fontSize:10,marginTop:4}}
-                  onClick={()=>goLink(`https://opensea.io/collection/cc0mon?searchQuery=${encodeURIComponent(sp.name)}`)}>
-                  VIEW ON OPENSEA ▸
-                </button>
-              </div>
-            ):(
-              <div style={{display:'flex',flexDirection:'column',gap:4}}>
-                {sales.map((s,i)=>(
-                  <div key={i} style={{padding:'8px 10px',background:'var(--bg)',
-                    border:'1px solid var(--border)'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-                      marginBottom:3}}>
-                      <span style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--gold)'}}>
-                        {s.price}
-                      </span>
-                      <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)'}}>
-                        {s.date}
-                      </span>
-                    </div>
-                    <div style={{fontFamily:'var(--ff-mono)',fontSize:10,color:'var(--text2)'}}>
-                      {s.from} → {s.to}
-                      {s.tx&&<button className="btn btn-filter" style={{fontSize:8,padding:'1px 5px',marginLeft:6}}
-                        onClick={()=>goLink(`https://etherscan.io/tx/${s.tx}`)}>TX</button>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>
@@ -550,7 +492,6 @@ function LibraryInner() {
             </div>
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
               letterSpacing:2,marginBottom:14}}>
-              {species.length} SPECIES · {totalWithHolders} HAVE HOLDERS
             </div>
           </div>
           {/* quick rarity legend */}

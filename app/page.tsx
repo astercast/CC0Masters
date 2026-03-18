@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import type { LeaderboardData, LeaderboardEntry, CollectorData } from '@/lib/types';
 
 const TOTAL_SPECIES  = 260;
@@ -261,67 +262,30 @@ function EnergyDots({ byEnergy }: { byEnergy: LeaderboardEntry['byEnergy'] }) {
   </div>;
 }
 
-/* Global preload cache — persists across panel open/close */
-const spriteCache = new Map<string, 'ok'|'err'|'pending'>();
-function preloadSprite(src: string): Promise<void> {
-  if (!src || spriteCache.has(src)) return Promise.resolve();
-  spriteCache.set(src, 'pending');
-  return new Promise(res => {
-    const img = new window.Image();
-    img.onload  = () => { spriteCache.set(src, 'ok'); res(); };
-    img.onerror = () => { spriteCache.set(src, 'err'); res(); };
-    img.src = src;
-  });
-}
-/** Preload a batch of images in parallel */
-function preloadAllSprites(images: Record<string,{png:string;svg:string;name:string}>) {
-  const srcs = Object.values(images).map(v=>v.png||v.svg).filter(Boolean);
-  // Fire all in parallel, 20 at a time to avoid overwhelming the browser
-  const CHUNK = 20;
-  let idx = 0;
-  const next = () => {
-    const batch = srcs.slice(idx, idx+CHUNK);
-    if (!batch.length) return;
-    idx += CHUNK;
-    Promise.all(batch.map(preloadSprite)).then(next);
-  };
-  next();
-}
-
-/* Single sprite image — uses cache for instant re-renders */
+/* Sprite — uses native browser img loading. No JS preload needed.
+   The browser handles connection pooling and caching natively. */
 function Sprite({ src, name, size=56, dimmed=false, className='' }: { src:string; name:string; size?:number; dimmed?:boolean; className?:string }) {
-  const cached = src ? spriteCache.get(src) : undefined;
-  const [status, setStatus] = useState<'loading'|'ok'|'err'>(
-    cached === 'ok' ? 'ok' : cached === 'err' ? 'err' : 'loading'
-  );
+  const [status, setStatus] = useState<'loading'|'ok'|'err'>(src?'loading':'err');
 
-  useEffect(() => {
-    if (!src) { setStatus('err'); return; }
-    const c = spriteCache.get(src);
-    if (c === 'ok') { setStatus('ok'); return; }
-    if (c === 'err') { setStatus('err'); return; }
-    setStatus('loading');
-    const img = new window.Image();
-    img.onload  = () => { spriteCache.set(src,'ok'); setStatus('ok'); };
-    img.onerror = () => { spriteCache.set(src,'err'); setStatus('err'); };
-    img.src = src;
-  }, [src]);
-
-  if (status === 'err' || !src) return (
+  if (!src) return (
     <div style={{width:size,height:size,display:'flex',alignItems:'center',justifyContent:'center',
       background:'var(--bg2)',border:'1px solid var(--border)',fontSize:size*0.3,
       color:'var(--text3)',opacity:dimmed?0.15:0.4,imageRendering:'pixelated'}}>?</div>
   );
 
   return (
-    <div style={{width:size,height:size,position:'relative',display:'flex',alignItems:'center',justifyContent:'center',imageRendering:'pixelated'}}>
+    <div style={{width:size,height:size,position:'relative',imageRendering:'pixelated',flexShrink:0}}>
       {status==='loading'&&<div className="skeleton" style={{position:'absolute',inset:0}}/>}
-      <img src={src} alt={name} width={size} height={size} loading="eager"
+      {status==='err'&&<div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
+        justifyContent:'center',fontSize:size*0.3,color:'var(--text3)',opacity:dimmed?0.15:0.4}}>?</div>}
+      <img src={src} alt={name} width={size} height={size}
+        loading="eager" decoding="async"
+        onLoad={()=>setStatus('ok')}
+        onError={()=>setStatus('err')}
         style={{imageRendering:'pixelated',display:'block',
-          opacity: status==='ok' ? (dimmed?0.18:1) : 0,
-          transition:'opacity 0.2s',
-          position:'relative',
-          filter: dimmed ? 'grayscale(1)' : 'none'}}
+          opacity:status==='ok'?(dimmed?0.18:1):0,
+          transition:'opacity 0.15s',
+          filter:dimmed?'grayscale(1)':'none'}}
         className={className}
       />
     </div>
@@ -419,12 +383,12 @@ function SkeletonRow({ mobile }: { mobile: boolean }) {
 }
 
 function DetailPanel({
-  entry, images, registryData
+  entry, images, registryData, onNavigate,
 }: {
   entry: LeaderboardEntry;
   images: Record<string,{svg:string;png:string;name:string}>;
   registryData: Record<string,{name:string;energy:string}>;
- 
+  onNavigate?: (speciesNum: number) => void;
 }) {
   const [tab, setTab] = useState<'energy'|'dex'>('dex');
 
@@ -509,7 +473,9 @@ function DetailPanel({
             const src = imgData?.png || imgData?.svg || '';
             return (
               <div key={sp.number} className={`species-cell${sp.collected?' collected':''}`}
-                title={`#${sp.number}${sp.name&&!sp.name.startsWith('#')?' — '+sp.name:''}`}>
+                title={`View ${sp.name} in DEX`}
+                style={{cursor:'pointer'}}
+                onClick={e=>{e.stopPropagation();onNavigate?.(parseInt(sp.number));}}>
                 {sp.collected&&(
                   <div style={{position:'absolute',top:2,right:3,fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--lime)'}}>✓</div>
                 )}
@@ -547,6 +513,7 @@ function useMobile() {
 
 export default function CC0Masters() {
   const mobile = useMobile();
+  const router = useRouter();
   const [confirm,setConfirm] = useState<string|null>(null); // holds pending URL
   useEffect(()=>{ _toastSetter = (url)=>setConfirm(url); return()=>{ _toastSetter=null; }; },[]);
   const [data,setData]                   = useState<LeaderboardData|null>(null);
@@ -556,6 +523,7 @@ export default function CC0Masters() {
   const [registryData,setRegistryData]   = useState<Record<string,{name:string;energy:string}>>({});
   const [openRow,setOpenRow]             = useState<string|null>(null);
   const [filter,setFilter]               = useState<'all'|'top10'|'top50'>('top10');
+  const [walletSearch,setWalletSearch]   = useState('');
   const [isAdmin,setIsAdmin]             = useState(false);
   const [scanning,setScanning]           = useState(false);
   const [scanPhase,setScanPhase]         = useState('');
@@ -617,8 +585,6 @@ export default function CC0Masters() {
       }
       setImages(imgs);
       setRegistryData(rd);
-      // Kick off parallel preload of all sprites immediately
-      preloadAllSprites(imgs);
     }).catch(()=>{});
     fetch('https://api.cc0mon.com/registry').then(r=>r.json()).then(d=>{
       const rd:Record<string,{name:string;energy:string}>={};
@@ -673,9 +639,19 @@ export default function CC0Masters() {
     return e;
   });
 
+  const walletSearchLower = walletSearch.toLowerCase().trim();
   const sorted = correctedLeaders.slice()
     .sort((a,b)=>b.collected-a.collected)
-    .filter((_,i)=>filter==='top10'?i<10:filter==='top50'?i<50:true);
+    .filter(e => {
+      if (walletSearchLower) {
+        return e.address.toLowerCase().includes(walletSearchLower);
+      }
+      return filter==='top10'?true:true; // show all when searching
+    })
+    .filter((_,i) => {
+      if (walletSearchLower) return true; // no limit when searching
+      return filter==='top10'?i<10:filter==='top50'?i<50:true;
+    });
   const completeCount = correctedLeaders.filter(l=>l.collected===TOTAL_SPECIES).length;
 
   // Ticker text
@@ -951,18 +927,38 @@ export default function CC0Masters() {
         )}
 
         {/* FILTER/SORT */}
-        {!loading&&!error&&sorted.length>0&&(
+        {!loading&&!error&&(
           <div style={{display:'flex',gap:5,marginBottom:12,flexWrap:'wrap',alignItems:'center'}}>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginRight:3}}>SHOW:</span>
+            {/* Wallet search */}
+            <input
+              type="text"
+              placeholder={mobile?"SEARCH WALLET…":"SEARCH WALLET ADDRESS OR ENS…"}
+              value={walletSearch}
+              onChange={e=>setWalletSearch(e.target.value)}
+              style={{fontFamily:'var(--ff-pixel)',fontSize:11,background:'var(--bg)',
+                border:'1px solid var(--border)',color:'var(--text)',
+                padding:'6px 12px',outline:'none',
+                width:mobile?'100%':280,letterSpacing:0.5,
+                transition:'border-color 0.1s'}}
+              onFocus={e=>e.target.style.borderColor='var(--lime)'}
+              onBlur={e=>e.target.style.borderColor='var(--border)'}
+            />
+            {walletSearch&&(
+              <button className="btn btn-filter" onClick={()=>setWalletSearch('')} style={{fontSize:10}}>✕</button>
+            )}
+            {!walletSearch&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginRight:3,marginLeft:4}}>SHOW:</span>}
             {(['all','top10','top50'] as const).map(f=>(
               <button key={f} className={`btn btn-filter${filter===f?' active':''}`} onClick={()=>setFilter(f)}>
                 {f==='all'?'ALL':f==='top10'?'TOP 10':'TOP 50'}
               </button>
             ))}
 
-            <div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)'}}>
+            {!walletSearch&&<div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)'}}>
               {sorted.length.toLocaleString()} COLLECTORS
-            </div>
+            </div>}
+            {walletSearch&&<div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--lime)'}}>
+              {sorted.length} RESULT{sorted.length!==1?'S':''}
+            </div>}
           </div>
         )}
 
@@ -1055,7 +1051,7 @@ export default function CC0Masters() {
                           </td>
                         </tr>,
                         isOpen&&<tr key={`${entry.address}-d`}><td colSpan={mobile?5:8} style={{padding:0}}>
-                          <DetailPanel entry={entry} images={images} registryData={registryData}/>
+                          <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/pokedex?species=${n}`)}/>
                         </td></tr>,
                       ];
                     })}

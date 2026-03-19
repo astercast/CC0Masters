@@ -19,4 +19,5 @@ export interface LeaderboardData {
   totalOwners: number;
   totalTokensScanned: number;
   leaders: LeaderboardEntry[];
+  speciesSupply?: Record<number, number>; // real on-chain token count per species
 }

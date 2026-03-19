@@ -135,8 +135,8 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
 }
 
 /* ── Detail Modal ── */
-function DetailModal({sp,holderMap,supplyMap,allSpecies,onClose,onNav}:{
-  sp:Species; holderMap:Record<number,{address:string}[]>; supplyMap:Record<number,number>;
+function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onNav}:{
+  sp:Species; holderMap:Record<number,{address:string;tokenCount?:number}[]>; supplyMap:Record<number,number>; setHolderMap:React.Dispatch<React.SetStateAction<Record<number,{address:string;tokenCount?:number}[]>>>;
   allSpecies:Species[]; onClose:()=>void; onNav:(n:number)=>void;
 }) {
   const [desc,setDesc]=useState('');
@@ -149,6 +149,28 @@ function DetailModal({sp,holderMap,supplyMap,allSpecies,onClose,onNav}:{
   const idx=allSpecies.findIndex(s=>s.number===sp.number);
   const prev=idx>0?allSpecies[idx-1]:null;
   const next=idx<allSpecies.length-1?allSpecies[idx+1]:null;
+
+  // Fetch per-species token counts for each holder from CC0mon API
+  useEffect(()=>{
+    const holdersForSp = holderMap[sp.number]||[];
+    if (!holdersForSp.length) return;
+    Promise.allSettled(holdersForSp.map(async h=>{
+      try {
+        const r=await fetch(`https://api.cc0mon.com/collector/${h.address}`,{signal:AbortSignal.timeout(6000)});
+        const d=await r.json();
+        const spData=d.checklist?.find((s:any)=>s.number===sp.number);
+        return {address:h.address, tokenCount:spData?.tokenIds?.length??1};
+      } catch { return {address:h.address,tokenCount:h.tokenCount??1}; }
+    })).then(results=>{
+      const counts:Record<string,number>={};
+      for (const r of results) if (r.status==='fulfilled') counts[r.value.address]=r.value.tokenCount;
+      setHolderMap(prev=>{
+        const updated=[...(prev[sp.number]||[])].map(h=>({...h,tokenCount:counts[h.address]??h.tokenCount}))
+          .sort((a,b)=>(b.tokenCount??1)-(a.tokenCount??1));
+        return {...prev,[sp.number]:updated};
+      });
+    });
+  },[sp.number]);
 
   useEffect(()=>{
     setDesc('');
@@ -344,7 +366,11 @@ function DetailModal({sp,holderMap,supplyMap,allSpecies,onClose,onNav}:{
                       flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {h.address.slice(0,8)}…{h.address.slice(-5)}
                     </span>
-
+                    {h.tokenCount!=null&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:9,
+                      color:col,padding:'1px 5px',border:`1px solid ${col}40`,
+                      background:`${col}10`,flexShrink:0}}>
+                      ×{h.tokenCount}
+                    </span>}
                   </div>
                 ))}
               </div>
@@ -368,7 +394,7 @@ function LibraryInner() {
   const [filterEnergy,setFilterEnergy]=useState('');
   const [filterRarity,setFilterRarity]=useState('');
   const [sortBy,setSortBy]=useState<'number'|'holders'>('number');
-  const [holderMap,setHolderMap]=useState<Record<number,{address:string}[]>>({});
+  const [holderMap,setHolderMap]=useState<Record<number,{address:string;tokenCount?:number}[]>>({});
   const [supplyMap,setSupplyMap]=useState<Record<number,number>>({});
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
@@ -630,6 +656,7 @@ function LibraryInner() {
         <DetailModal sp={selected}
           holderMap={holderMap}
           supplyMap={supplyMap}
+          setHolderMap={setHolderMap}
           allSpecies={species}
           onClose={closeModal}
           onNav={navSpecies}/>

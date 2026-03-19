@@ -141,7 +141,7 @@ async function runOnChainScan(
   setLiveOwners:(n:number)=>void, abortRef:React.MutableRefObject<boolean>,
   registryData:Record<string,{name:string;energy:string}>,
   setImages:(fn:(prev:Record<string,{svg:string;png:string;name:string}>)=>Record<string,{svg:string;png:string;name:string}>)=>void
-): Promise<CollectorData[]> {
+): Promise<{collectors:CollectorData[];speciesSupply:Record<number,number>}> {
   const BATCH=500, URI_BATCH=50;
   setPhase('PHASE 1/3 — READING OWNERS');
   const tokenOwners=new Map<number,string>(), ownerTokens=new Map<string,number[]>();
@@ -224,7 +224,14 @@ async function runOnChainScan(
     const collected=cs.size;
     collectors.push({address,collected,missing:TOTAL_SPECIES-collected,progress:((collected/TOTAL_SPECIES)*100).toFixed(1)+'%',totalTokensHeld:tokenIds.length,byEnergy,checklist,collectedSpeciesNums:Array.from(cs)});
   }
-  return collectors;
+  // Compute real supply per species from the full tokenSpecies scan
+  const speciesSupply: Record<number,number> = {};
+  for (const [,sp] of tokenSpecies) {
+    const energyKey = `${sp.speciesName.toLowerCase()}|${sp.energy.toLowerCase()}`;
+    const num = nameToNum.get(energyKey) ?? nameToNum.get(sp.speciesName.toLowerCase());
+    if (num) speciesSupply[num] = (speciesSupply[num]||0) + 1;
+  }
+  return { collectors, speciesSupply };
 }
 
 /* ══ UI COMPONENTS ══ */
@@ -618,7 +625,7 @@ export default function CC0Masters() {
     scanAbort.current=false;
     setScanning(true); setScanPct(0); setScanPhase(''); setScanDetail(''); setLiveOwners(0);
     try {
-      const collectors=await runOnChainScan(setScanPhase,setScanPct,setScanDetail,setLiveOwners,scanAbort,registryData,setImages);
+      const {collectors,speciesSupply}=await runOnChainScan(setScanPhase,setScanPct,setScanDetail,setLiveOwners,scanAbort,registryData,setImages);
       if (scanAbort.current) { setScanning(false); return; }
       setScanPhase('SAVING...'); setScanPct(95); setScanDetail('Writing to storage...');
       collectors.sort((a,b)=>b.collected-a.collected);
@@ -627,7 +634,7 @@ export default function CC0Masters() {
         .then(r=>r.json()).then(j=>parseInt(j.result,16)).catch(()=>0);
       const leaders=collectors.map((c,i)=>{ const {checklist:_,...rest}=c as typeof c&{checklist?:unknown}; return {rank:i+1,...rest}; });
       const sr=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({updatedAt:new Date().toISOString(),scannedBlock,totalOwners:collectors.length,totalTokensScanned:TOTAL_TOKENS,leaders})});
+        body:JSON.stringify({updatedAt:new Date().toISOString(),scannedBlock,totalOwners:collectors.length,totalTokensScanned:TOTAL_TOKENS,leaders,speciesSupply})});
       if (!sr.ok) { const e=await sr.json(); throw new Error(e.error||'Save failed'); }
       setScanPct(100); setScanPhase('COMPLETE ✓');
       setTimeout(()=>{ setScanning(false); setScanPhase(''); fetchLeaderboard(); },1500);

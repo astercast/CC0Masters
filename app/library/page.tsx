@@ -15,11 +15,7 @@ const RC: Record<string,string> = {
 };
 const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary'];
 
-// Approximate supply by rarity tier (9999 total / 260 species * rarity factor)
-const SUPPLY_EST: Record<string,number> = {
-  Common:Math.round(9999/260*1.8), Uncommon:Math.round(9999/260*1.1),
-  Rare:Math.round(9999/260*0.65), Epic:Math.round(9999/260*0.3), Legendary:Math.round(9999/260*0.12),
-};
+
 
 let _dlgSetter: ((url:string|null)=>void)|null = null;
 function goLink(url: string) { _dlgSetter?.(url); }
@@ -139,14 +135,14 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
 }
 
 /* ── Detail Modal ── */
-function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
-  sp:Species; holderMap:Record<number,{address:string}[]>;
+function DetailModal({sp,holderMap,supplyMap,allSpecies,onClose,onNav}:{
+  sp:Species; holderMap:Record<number,{address:string}[]>; supplyMap:Record<number,number>;
   allSpecies:Species[]; onClose:()=>void; onNav:(n:number)=>void;
 }) {
   const [desc,setDesc]=useState('');
   const col=EC[sp.energy]||'#7ee832';
   const rc=RC[sp.rarity]||'#90c880';
-  const supply=SUPPLY_EST[sp.rarity]||Math.round(9999/260);
+  const supply=supplyMap[sp.number]; // real count from holder tokenIds
   const holders=holderMap[sp.number]||[];
 
   // prev/next navigation
@@ -284,7 +280,7 @@ function DetailModal({sp,holderMap,allSpecies,onClose,onNav}:{
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'20px 32px 16px'}}>
           {([
             [holders.length||'—','HOLDERS',col],
-            [supply,'SUPPLY','var(--bright)'],
+            [supply!=null?String(supply):'…','SUPPLY','var(--bright)'],
             [sp.rarity,sp.rarity==='Legendary'?'⭐ RARITY':'RARITY',rc],
           ] as [any,string,string][]).map(([v,l,c])=>(
             <div key={l} style={{background:'var(--bg)',border:`1px solid ${c}18`,
@@ -373,6 +369,7 @@ function LibraryInner() {
   const [filterRarity,setFilterRarity]=useState('');
   const [sortBy,setSortBy]=useState<'number'|'holders'>('number');
   const [holderMap,setHolderMap]=useState<Record<number,{address:string}[]>>({});
+  const [supplyMap,setSupplyMap]=useState<Record<number,number>>({});
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
 
@@ -415,6 +412,11 @@ function LibraryInner() {
         }
       }
       setHolderMap(map);
+    }).catch(()=>{});
+
+    // Fetch real supply counts (computed from all holder tokenIds)
+    fetch('/api/supply').then(r=>r.json()).then(d=>{
+      setSupplyMap(d||{});
     }).catch(()=>{});
   },[]);
 
@@ -613,7 +615,7 @@ function LibraryInner() {
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text)'}}>{sp.name}</span>
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:col}}>{sp.energy}</span>
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:rc}}>{sp.rarity}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--bright)'}}>~{SUPPLY_EST[sp.rarity]||'—'}</span>
+                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--bright)'}}>{supplyMap[sp.number]!=null?supplyMap[sp.number]:'…'}</span>
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)'}}>
                     {holderMap[sp.number]?.length||'—'}
                   </span>
@@ -627,6 +629,7 @@ function LibraryInner() {
       {selected&&(
         <DetailModal sp={selected}
           holderMap={holderMap}
+          supplyMap={supplyMap}
           allSpecies={species}
           onClose={closeModal}
           onNav={navSpecies}/>

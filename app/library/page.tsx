@@ -1,6 +1,17 @@
 'use client';
 import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect as useEffectMobile, useState as useStateMobile } from 'react';
+
+function useMobile() {
+  const [m,setM] = useStateMobile(false);
+  useEffectMobile(()=>{
+    const check=()=>setM(window.innerWidth<700);
+    check(); window.addEventListener('resize',check);
+    return()=>window.removeEventListener('resize',check);
+  },[]);
+  return m;
+}
 
 const CC0_CONTRACT = '0xeeb036dbbd3039429c430657ed9836568da79d5f';
 
@@ -135,11 +146,11 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
 }
 
 /* ── Detail Modal ── */
-function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onNav}:{
-  sp:Species; holderMap:Record<number,{address:string;tokenCount?:number}[]>; supplyMap:Record<number,number>; setHolderMap:React.Dispatch<React.SetStateAction<Record<number,{address:string;tokenCount?:number}[]>>>;
+function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpecies,onClose,onNav}:{
+  sp:Species; holderMap:Record<number,{address:string;tokenCount?:number}[]>; supplyMap:Record<number,number>; setHolderMap:React.Dispatch<React.SetStateAction<Record<number,{address:string;tokenCount?:number}[]>>>; descMap:Record<number,string>; mobile?:boolean;
   allSpecies:Species[]; onClose:()=>void; onNav:(n:number)=>void;
 }) {
-  const [desc,setDesc]=useState('');
+  const desc = descMap[sp.number] || '';
   const col=EC[sp.energy]||'#7ee832';
   const rc=RC[sp.rarity]||'#90c880';
   const supply=supplyMap[sp.number]; // real count from holder tokenIds
@@ -172,17 +183,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
     });
   },[sp.number]);
 
-  useEffect(()=>{
-    setDesc('');
-    fetch('/api/registry').then(r=>r.json()).then(d=>{
-      const tid=d.images?.[String(sp.number)]?.tokenId;
-      if (!tid) return;
-      // description
-      fetch(`https://api.cc0mon.com/cc0mon/${tid}`).then(r=>r.json())
-        .then(t=>setDesc(t.description||'')).catch(()=>{});
 
-    }).catch(()=>{});
-  },[sp.number]);
 
   // keyboard nav
   useEffect(()=>{
@@ -197,43 +198,62 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
 
   return (
     <div style={{position:'fixed',inset:0,zIndex:9000,background:'rgba(0,0,0,0.88)',
-      display:'flex',alignItems:'center',justifyContent:'center',
-      backdropFilter:'blur(4px)',animation:'fadeIn 0.12s ease'}} onClick={onClose}>
+      display:'flex',alignItems:mobile?'flex-start':'center',justifyContent:'center',
+      backdropFilter:'blur(4px)',animation:'fadeIn 0.12s ease',
+      overflowY:mobile?'auto':'hidden'}} onClick={onClose}>
       <div style={{
         background:`linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%)`,
         border:`2px solid ${col}50`,
         boxShadow:`0 0 80px ${col}10, 0 0 0 1px ${col}15, 0 24px 80px rgba(0,0,0,0.9)`,
-        maxWidth:780,width:'96%',maxHeight:'92vh',overflowY:'auto',
+        maxWidth:780,width:'96%',
+        maxHeight:mobile?'none':'90vh',
+        overflowY:mobile?'visible':'auto',
+        marginTop:mobile?0:'auto',marginBottom:mobile?0:'auto',
         position:'relative',animation:'fadeUp 0.2s ease',
+        flexShrink:0,
       }} onClick={e=>e.stopPropagation()}>
 
         {/* Full-width top energy bar */}
         <div style={{height:4,background:`linear-gradient(90deg,${col}30,${col},${col}30)`}}/>
 
-        {/* Nav arrows */}
-        {prev&&<button onClick={e=>{e.stopPropagation();onNav(prev.number);}}
-          style={{position:'absolute',left:0,top:'50%',transform:'translateY(-50%)',
-            background:'transparent',border:'none',color:col,fontSize:28,cursor:'pointer',
-            padding:'8px 12px',zIndex:3,opacity:0.6,transition:'opacity 0.1s'}}
-          onMouseEnter={e=>(e.currentTarget as HTMLElement).style.opacity='1'}
-          onMouseLeave={e=>(e.currentTarget as HTMLElement).style.opacity='0.6'}>‹</button>}
-        {next&&<button onClick={e=>{e.stopPropagation();onNav(next.number);}}
-          style={{position:'absolute',right:0,top:'50%',transform:'translateY(-50%)',
-            background:'transparent',border:'none',color:col,fontSize:28,cursor:'pointer',
-            padding:'8px 12px',zIndex:3,opacity:0.6,transition:'opacity 0.1s'}}
-          onMouseEnter={e=>(e.currentTarget as HTMLElement).style.opacity='1'}
-          onMouseLeave={e=>(e.currentTarget as HTMLElement).style.opacity='0.6'}>›</button>}
+        {/* Sticky top bar on mobile: close + nav arrows always accessible */}
+        <div style={{
+          display:'flex',alignItems:'center',justifyContent:'space-between',
+          padding:'8px 12px',
+          background:'var(--bg)',
+          borderBottom:`1px solid ${col}20`,
+          position:mobile?'sticky':'relative',top:mobile?0:undefined,
+          zIndex:10,
+        }}>
+          {/* ← prev */}
+          <button onClick={e=>{e.stopPropagation();prev&&onNav(prev.number);}}
+            disabled={!prev}
+            style={{background:'transparent',border:`1px solid ${prev?col+'40':'var(--border)'}`,
+              color:prev?col:'var(--text3)',fontFamily:'var(--ff-pixel)',fontSize:mobile?14:18,
+              cursor:prev?'pointer':'default',padding:'4px 10px',opacity:prev?1:0.3,
+              transition:'all 0.1s'}}>‹ PREV</button>
 
-        {/* Close */}
-        <button onClick={onClose} style={{position:'absolute',top:14,right:16,
-          background:'transparent',border:'1px solid var(--border)',color:'var(--text3)',
-          fontFamily:'var(--ff-pixel)',fontSize:11,cursor:'pointer',padding:'3px 9px',
-          zIndex:3,transition:'all 0.1s'}}
-          onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor='var(--red)';el.style.color='var(--red)';}}
-          onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor='var(--border)';el.style.color='var(--text3)';}}>ESC ✕</button>
+          {/* Close — always visible in center on mobile */}
+          <button onClick={onClose} style={{
+            background:'transparent',border:'1px solid var(--border)',color:'var(--text3)',
+            fontFamily:'var(--ff-pixel)',fontSize:11,cursor:'pointer',padding:'4px 12px',
+            transition:'all 0.1s'}}
+            onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor='var(--red)';el.style.color='var(--red)';}}
+            onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.borderColor='var(--border)';el.style.color='var(--text3)';}}>
+            ESC ✕
+          </button>
+
+          {/* next → */}
+          <button onClick={e=>{e.stopPropagation();next&&onNav(next.number);}}
+            disabled={!next}
+            style={{background:'transparent',border:`1px solid ${next?col+'40':'var(--border)'}`,
+              color:next?col:'var(--text3)',fontFamily:'var(--ff-pixel)',fontSize:mobile?14:18,
+              cursor:next?'pointer':'default',padding:'4px 10px',opacity:next?1:0.3,
+              transition:'all 0.1s'}}>NEXT ›</button>
+        </div>
 
         {/* ── HERO ── */}
-        <div style={{padding:'20px 32px 0',display:'flex',gap:24,alignItems:'flex-start',flexWrap:'wrap'}}>
+        <div style={{padding:mobile?'12px 16px 0':'20px 32px 0',display:'flex',gap:mobile?12:24,alignItems:'flex-start',flexWrap:'wrap'}}>
           {/* Big sprite */}
           <div style={{flexShrink:0,position:'relative'}}>
             <div style={{border:`2px solid ${col}40`,padding:12,background:`${col}06`,
@@ -251,7 +271,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
                   borderBottom:ry?`2px solid ${col}`:undefined,borderTop:ry?undefined:`2px solid ${col}`,
                   opacity:0.7}}/>
               ))}
-              <Sprite src={sp.png||sp.svg||''} name={sp.name} size={148}/>
+              <Sprite src={sp.png||sp.svg||''} name={sp.name} size={mobile?88:148}/>
             </div>
             {/* Prev/next mini sprites */}
             <div style={{display:'flex',gap:6,marginTop:8,justifyContent:'center'}}>
@@ -299,7 +319,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
         </div>
 
         {/* ── STAT TILES ── */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'20px 32px 16px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,padding:mobile?'10px 16px 12px':'20px 32px 16px'}}>
           {([
             [holders.length||'—','HOLDERS',col],
             [supply!=null?String(supply):'…','SUPPLY','var(--bright)'],
@@ -318,7 +338,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
         </div>
 
         {/* ── ACTIONS ── */}
-        <div style={{padding:'0 32px 20px',display:'flex',gap:8,flexWrap:'wrap'}}>
+        <div style={{padding:mobile?'0 16px 14px':'0 32px 20px',display:'flex',gap:8,flexWrap:'wrap'}}>
           <button className="btn btn-primary" style={{fontSize:12,letterSpacing:1}}
             onClick={()=>goLink(`https://opensea.io/collection/cc0mon?searchQuery=${encodeURIComponent(sp.name)}`)}>
             🌊 OPENSEA
@@ -336,7 +356,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
         <div style={{height:1,background:`linear-gradient(90deg,transparent,var(--border),transparent)`,margin:'0 32px'}}/>
 
         {/* ── TWO COLUMN LOWER ── */}
-        <div style={{display:'flex',flexDirection:'column',gap:0,padding:'20px 32px 24px'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:0,padding:mobile?'12px 16px 20px':'20px 32px 24px'}}>
 
           {/* Holders */}
           <div style={{paddingRight:0}}>
@@ -348,7 +368,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
               <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
                 padding:'10px 0',lineHeight:2}}>NO HOLDERS IN LEADERBOARD DATA</div>
             ):(
-              <div style={{display:'flex',flexDirection:'column',gap:3,maxHeight:220,overflowY:'auto'}}>
+              <div style={{display:'flex',flexDirection:'column',gap:3,maxHeight:mobile?140:220,overflowY:'auto'}}>
                 {holders.slice(0,12).map((h,i)=>(
                   <div key={h.address} onClick={()=>goLink(`https://opensea.io/${h.address}`)}
                     style={{display:'flex',alignItems:'center',gap:8,padding:'6px 8px',
@@ -386,6 +406,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,allSpecies,onClose,onN
 /* ── Main inner component ── */
 function LibraryInner() {
   const router=useRouter();
+  const mobile=useMobile();
   const searchParams=useSearchParams();
   const [species,setSpecies]=useState<Species[]>([]);
   const [loading,setLoading]=useState(true);
@@ -396,6 +417,7 @@ function LibraryInner() {
   const [sortBy,setSortBy]=useState<'number'|'holders'>('number');
   const [holderMap,setHolderMap]=useState<Record<number,{address:string;tokenCount?:number}[]>>({});
   const [supplyMap,setSupplyMap]=useState<Record<number,number>>({});
+  const [descMap,setDescMap]=useState<Record<number,string>>({});
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
 
@@ -444,6 +466,11 @@ function LibraryInner() {
     fetch('/api/supply').then(r=>r.json()).then(d=>{
       setSupplyMap(d||{});
     }).catch(()=>{});
+
+    // Fetch all species descriptions (server-cached, 7-day TTL)
+    fetch('/api/desc').then(r=>r.json()).then(d=>{
+      setDescMap(d||{});
+    }).catch(()=>{});
   },[]);
 
   const energyList=Array.from(new Set(species.map(s=>s.energy))).sort();
@@ -489,8 +516,11 @@ function LibraryInner() {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
           padding:'8px 24px',borderBottom:'1px solid var(--border)',background:'var(--bg)'}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <button className="btn btn-filter" onClick={()=>router.push('/')}
-              style={{fontSize:11,letterSpacing:1,gap:5}}>← LEADERBOARD</button>
+            <button className="btn btn-filter" onClick={()=>{
+                if (window.history.length>1) router.back();
+                else router.push('/');
+              }}
+              style={{fontSize:11,letterSpacing:1,gap:5}}>← BACK</button>
             <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',letterSpacing:2}}>
               ▶ CC0MON LIBRARY
             </span>
@@ -657,6 +687,8 @@ function LibraryInner() {
           holderMap={holderMap}
           supplyMap={supplyMap}
           setHolderMap={setHolderMap}
+          descMap={descMap}
+          mobile={mobile}
           allSpecies={species}
           onClose={closeModal}
           onNav={navSpecies}/>

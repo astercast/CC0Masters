@@ -110,8 +110,13 @@ export async function saveLeaderboard(data: LeaderboardData) {
 export async function loadLeaderboard(): Promise<LeaderboardData | null> {
   try {
     const result = await get(BLOB_KEY, { access: 'private' });
-    // get() returns { statusCode, stream, blob } — stream is null on 304
-    if (!result || result.statusCode !== 200 || !result.stream) return null;
+    if (!result) return null;
+    // statusCode 304 = not modified, stream is null — fetch via URL directly
+    if (result.statusCode === 304 || !result.stream) {
+      const r = await fetch(result.blob.url);
+      if (!r.ok) return null;
+      return await r.json();
+    }
     const reader = result.stream.getReader();
     const chunks: Uint8Array[] = [];
     while (true) {
@@ -124,7 +129,10 @@ export async function loadLeaderboard(): Promise<LeaderboardData | null> {
     let offset = 0;
     for (const c of chunks) { merged.set(c, offset); offset += c.length; }
     return JSON.parse(new TextDecoder().decode(merged));
-  } catch { return null; }
+  } catch (e) {
+    console.error('[loadLeaderboard] error:', e);
+    return null;
+  }
 }
 
 /* ══ FULL INDEX ══ */
@@ -153,9 +161,14 @@ export async function runFullIndex(log: (phase: string, pct: number, detail: str
 export async function runIncrementalUpdate(log: (phase: string, pct: number, detail: string) => void = () => {}) {
   log('LOADING', 5, 'Loading existing leaderboard...');
   const existing = await loadLeaderboard();
-  if (!existing || !existing.scannedBlock) {
-    log('FULL SCAN NEEDED', 0, 'No existing data — running full scan');
-    return runFullIndex(log);
+  if (!existing) {
+    log('ERROR', 0, 'No leaderboard blob found — run Admin Scan first');
+    throw new Error('No leaderboard data. Run Admin Scan from the site footer.');
+  }
+  if (!existing.scannedBlock) {
+    // Has data but no block number — safe to just return existing data
+    log('NO BLOCK', 50, 'No scannedBlock in data — returning existing leaderboard');
+    return existing;
   }
 
   const latestBlock = await getLatestBlock();

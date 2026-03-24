@@ -95,31 +95,28 @@ async function scanAllOwners(log: (msg: string) => void): Promise<Map<string, nu
   return ownerMap;
 }
 
-/* ── Save to private blob ── */
+/* ── Save leaderboard — store as PUBLIC so it can be read without SDK auth ── */
 export async function saveLeaderboard(data: LeaderboardData) {
   await put(BLOB_KEY, JSON.stringify(data), {
-    access: 'private',
+    access: 'public',
     contentType: 'application/json',
     addRandomSuffix: false,
     allowOverwrite: true,
   });
 }
 
-/* ── Load from private blob — uses list() to get URL, then fetch() ── */
+/* ── Load leaderboard — list() to find URL, fetch() to read ── */
 export async function loadLeaderboard(): Promise<LeaderboardData | null> {
   try {
-    // list() to find the blob URL without needing get() with access params
     const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
     if (!blobs.length) {
-      console.error('[loadLeaderboard] No blob found at key:', BLOB_KEY);
+      console.error('[loadLeaderboard] No blob found with prefix:', BLOB_KEY);
       return null;
     }
-    // Fetch the private blob using the download URL (includes auth token)
-    const res = await fetch(blobs[0].downloadUrl, {
-      signal: AbortSignal.timeout(15000),
-    });
+    // Public blob — url is directly accessible
+    const res = await fetch(blobs[0].url, { signal: AbortSignal.timeout(15000) });
     if (!res.ok) {
-      console.error('[loadLeaderboard] fetch failed:', res.status, res.statusText);
+      console.error('[loadLeaderboard] fetch failed:', res.status, blobs[0].url.slice(0, 80));
       return null;
     }
     return await res.json();

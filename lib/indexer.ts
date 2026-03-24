@@ -1,4 +1,4 @@
-import { put, get } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 import type { LeaderboardData, LeaderboardEntry, CollectorData } from './types';
 
 const API         = 'https://api.cc0mon.com';
@@ -67,7 +67,6 @@ async function fetchCollectors(addresses: string[], log: (msg: string) => void):
         .catch(() => {})
     ));
     log(`Loaded ${Math.min(i + CONCURRENCY, addresses.length)}/${addresses.length} collections`);
-    // Rate-limit: 40 req/chunk, API allows 60/min → wait ~45s between chunks to be safe
     if (i + CONCURRENCY < addresses.length) await sleep(45000);
   }
   return results;
@@ -96,7 +95,7 @@ async function scanAllOwners(log: (msg: string) => void): Promise<Map<string, nu
   return ownerMap;
 }
 
-/* ── Save to private blob — single source of truth ── */
+/* ── Save to private blob ── */
 export async function saveLeaderboard(data: LeaderboardData) {
   await put(BLOB_KEY, JSON.stringify(data), {
     access: 'private',
@@ -106,31 +105,26 @@ export async function saveLeaderboard(data: LeaderboardData) {
   });
 }
 
-/* ── Load from private blob ── */
+/* ── Load from private blob — uses list() to get URL, then fetch() ── */
 export async function loadLeaderboard(): Promise<LeaderboardData | null> {
   try {
-    const result = await get(BLOB_KEY, { access: 'private' });
-    if (!result) return null;
-    // statusCode 304 = not modified, stream is null — fetch via URL directly
-    if (result.statusCode === 304 || !result.stream) {
-      const r = await fetch(result.blob.url);
-      if (!r.ok) return null;
-      return await r.json();
+    // list() to find the blob URL without needing get() with access params
+    const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
+    if (!blobs.length) {
+      console.error('[loadLeaderboard] No blob found at key:', BLOB_KEY);
+      return null;
     }
-    const reader = result.stream.getReader();
-    const chunks: Uint8Array[] = [];
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value) chunks.push(value);
+    // Fetch the private blob using the download URL (includes auth token)
+    const res = await fetch(blobs[0].downloadUrl, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      console.error('[loadLeaderboard] fetch failed:', res.status, res.statusText);
+      return null;
     }
-    const total = chunks.reduce((a, c) => a + c.length, 0);
-    const merged = new Uint8Array(total);
-    let offset = 0;
-    for (const c of chunks) { merged.set(c, offset); offset += c.length; }
-    return JSON.parse(new TextDecoder().decode(merged));
+    return await res.json();
   } catch (e) {
-    console.error('[loadLeaderboard] error:', e);
+    console.error('[loadLeaderboard] error:', String(e));
     return null;
   }
 }
@@ -161,13 +155,15 @@ export async function runFullIndex(log: (phase: string, pct: number, detail: str
 export async function runIncrementalUpdate(log: (phase: string, pct: number, detail: string) => void = () => {}) {
   log('LOADING', 5, 'Loading existing leaderboard...');
   const existing = await loadLeaderboard();
+
   if (!existing) {
-    log('ERROR', 0, 'No leaderboard blob found — run Admin Scan first');
-    throw new Error('No leaderboard data. Run Admin Scan from the site footer.');
+    const msg = 'No leaderboard data found. Run Admin Scan from the site footer first.';
+    log('ERROR', 0, msg);
+    throw new Error(msg);
   }
+
   if (!existing.scannedBlock) {
-    // Has data but no block number — safe to just return existing data
-    log('NO BLOCK', 50, 'No scannedBlock in data — returning existing leaderboard');
+    log('NO BLOCK', 50, 'No scannedBlock — returning existing data');
     return existing;
   }
 
@@ -185,7 +181,6 @@ export async function runIncrementalUpdate(log: (phase: string, pct: number, det
   const changedAddresses = await getTransferredAddresses(fromBlock, latestBlock);
 
   if (changedAddresses.size === 0) {
-    // No transfers — just bump scannedBlock and totalOwners
     const updated = { ...existing, scannedBlock: latestBlock, updatedAt: new Date().toISOString() };
     await saveLeaderboard(updated);
     log('NO CHANGES', 100, `No transfers in ${blockDelta.toLocaleString()} blocks`);
@@ -195,16 +190,13 @@ export async function runIncrementalUpdate(log: (phase: string, pct: number, det
   log('REFRESHING', 40, `${changedAddresses.size} affected addresses — refreshing...`);
   const refreshed = await fetchCollectors(Array.from(changedAddresses), msg => log('REFRESHING', 60, msg));
 
-  // Merge: updated entries replace existing, keep rest
   const leaderMap = new Map<string, LeaderboardEntry>();
   for (const entry of existing.leaders) leaderMap.set(entry.address.toLowerCase(), entry);
   for (const c of refreshed) {
-    // Strip checklist from stored data to keep blob small
     const { checklist: _, ...rest } = c as typeof c & { checklist?: unknown };
     leaderMap.set(c.address.toLowerCase(), { rank: 0, ...rest } as LeaderboardEntry);
   }
 
-  // Remove addresses that no longer hold any tokens (transferred all out)
   const result_leaders = Array.from(leaderMap.values()).filter(e => e.totalTokensHeld > 0 || e.collected > 0);
   result_leaders.sort((a, b) => b.collected - a.collected);
   result_leaders.forEach((e, i) => { e.rank = i + 1; });

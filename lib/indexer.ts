@@ -1,4 +1,4 @@
-import { put, list } from '@vercel/blob';
+import { put, get, list } from '@vercel/blob';
 import type { LeaderboardData, LeaderboardEntry, CollectorData } from './types';
 
 const API         = 'https://api.cc0mon.com';
@@ -95,35 +95,67 @@ async function scanAllOwners(log: (msg: string) => void): Promise<Map<string, nu
   return ownerMap;
 }
 
-/* ── Save leaderboard — store as PUBLIC so it can be read without SDK auth ── */
+/* ── Save to private blob ── */
 export async function saveLeaderboard(data: LeaderboardData) {
   await put(BLOB_KEY, JSON.stringify(data), {
-    access: 'public',
+    access: 'private',
     contentType: 'application/json',
     addRandomSuffix: false,
     allowOverwrite: true,
   });
 }
 
-/* ── Load leaderboard — list() to find URL, fetch() to read ── */
+/* ── Load from private blob ── 
+   Strategy: list() to find the blob URL, then get() with that URL (handles private auth) ──
+*/
 export async function loadLeaderboard(): Promise<LeaderboardData | null> {
   try {
+    // Step 1: find the blob URL via list()
     const { blobs } = await list({ prefix: BLOB_KEY, limit: 1 });
     if (!blobs.length) {
       console.error('[loadLeaderboard] No blob found with prefix:', BLOB_KEY);
       return null;
     }
-    // Public blob — url is directly accessible
-    const res = await fetch(blobs[0].url, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) {
-      console.error('[loadLeaderboard] fetch failed:', res.status, blobs[0].url.slice(0, 80));
+
+    // Step 2: get() with the actual blob URL — this uses BLOB_READ_WRITE_TOKEN automatically
+    const result = await get(blobs[0].url, { access: 'private' });
+    if (!result) {
+      console.error('[loadLeaderboard] get() returned null for:', blobs[0].url.slice(0, 80));
       return null;
     }
-    return await res.json();
+
+    // Step 3: handle 304 (not modified) — stream is null, blob metadata still present
+    if (result.statusCode === 304 || !result.stream) {
+      // Re-fetch without caching hint
+      const r2 = await get(blobs[0].url, { access: 'private' });
+      if (!r2?.stream) {
+        console.error('[loadLeaderboard] 304/no stream, re-fetch also failed');
+        return null;
+      }
+      return await readStream(r2.stream);
+    }
+
+    return await readStream(result.stream);
   } catch (e) {
     console.error('[loadLeaderboard] error:', String(e));
     return null;
   }
+}
+
+async function readStream(stream: ReadableStream<Uint8Array>): Promise<LeaderboardData> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+  const merged = chunks.reduce((a, c) => {
+    const m = new Uint8Array(a.length + c.length);
+    m.set(a); m.set(c, a.length);
+    return m;
+  }, new Uint8Array(0));
+  return JSON.parse(new TextDecoder().decode(merged));
 }
 
 /* ══ FULL INDEX ══ */
@@ -160,7 +192,7 @@ export async function runIncrementalUpdate(log: (phase: string, pct: number, det
   }
 
   if (!existing.scannedBlock) {
-    log('NO BLOCK', 50, 'No scannedBlock — returning existing data');
+    log('NO BLOCK', 50, 'No scannedBlock in data — returning existing');
     return existing;
   }
 

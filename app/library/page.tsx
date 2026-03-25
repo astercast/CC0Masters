@@ -89,6 +89,7 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
   const [hov,setHov]=useState(false);
   return (
     <div onClick={onClick}
+      className={`species-card-wrap card-${sp.energy.toLowerCase()} rarity-${sp.rarity.toLowerCase()}`}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{
         background:hov
@@ -101,24 +102,26 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
           `0 2px 8px rgba(0,0,0,0.3)`,
         transition:'all 0.15s ease',
       }}>
+      {/* Holo sheen */}
+      <div className="holo-sheen"/>
       {/* Energy color top bar */}
       <div style={{position:'absolute',top:0,left:0,right:0,height:3,
         background:`linear-gradient(90deg,transparent,${col},transparent)`,
         opacity:hov?1:0.5,transition:'opacity 0.15s'}}/>
       {/* # badge */}
-      <div style={{position:'absolute',top:6,left:7,fontFamily:'var(--ff-pixel)',fontSize:11,
+      <div className="species-num-badge" style={{position:'absolute',top:6,left:7,fontFamily:'var(--ff-pixel)',fontSize:11,
         color:hov?col:'var(--text2)',letterSpacing:0.5,fontWeight:'bold',
         textShadow:hov?`0 0 8px ${col}80`:'none',
         transition:'all 0.15s'}}>#{String(sp.number).padStart(3,'0')}</div>
       {/* rarity gem */}
-      <div style={{position:'absolute',top:8,right:8,width:7,height:7,background:rc,
+      <div className={`rarity-dot-${sp.rarity.toLowerCase()}`} style={{position:'absolute',top:8,right:8,width:7,height:7,background:rc,
         boxShadow:hov?`0 0 8px ${rc}, 0 0 16px ${rc}60`:`0 0 4px ${rc}80`,
         transition:'box-shadow 0.15s'}}/>
       {/* sprite area */}
       <div style={{padding:'26px 8px 6px',display:'flex',flexDirection:'column',alignItems:'center',gap:5}}>
         <div style={{position:'relative'}}>
           {hov&&<div style={{position:'absolute',inset:-4,background:`radial-gradient(circle,${col}20 0%,transparent 70%)`,pointerEvents:'none'}}/>}
-          <Sprite src={sp.png||sp.svg||''} name={sp.name} size={68}/>
+          <div className="sprite-hover-wrap"><Sprite src={sp.png||sp.svg||''} name={sp.name} size={68}/></div>
         </div>
         {/* name */}
         <div style={{fontFamily:'var(--ff-pixel)',fontSize:'clamp(7px,1.1vw,9px)',
@@ -502,7 +505,8 @@ function LibraryInner() {
 
   return (
     <div style={{background:'var(--black)',color:'var(--text)',minHeight:'100vh',fontFamily:'var(--ff-mono)'}}>
-      <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
+      <div className="energy-bar" style={{position:'fixed',top:0,left:0,right:0,zIndex:9999,pointerEvents:'none'}}/>
+      <div style={{position:'fixed',top:3,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
         background:'linear-gradient(180deg,transparent,rgba(124,232,50,0.06),transparent)',
         animation:'scanline 8s linear infinite',opacity:0.7}}/>
 

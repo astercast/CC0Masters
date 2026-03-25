@@ -316,7 +316,7 @@ function SpriteParade({ images }: { images: Record<string,{svg:string;png:string
   const doubled = [...nums, ...nums]; // seamless loop
 
   return (
-    <div style={{overflow:'hidden',padding:'12px 0',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)',background:'var(--bg2)',position:'relative'}}>
+    <div style={{overflow:'hidden',padding:'14px 0',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)',background:'linear-gradient(180deg,var(--bg2),var(--bg3))',position:'relative',boxShadow:'inset 0 1px 0 var(--green0),inset 0 -1px 0 var(--green0)'}}>
       {/* fade edges */}
       <div style={{position:'absolute',left:0,top:0,bottom:0,width:80,background:'linear-gradient(90deg,var(--bg2),transparent)',zIndex:2,pointerEvents:'none'}}/>
       <div style={{position:'absolute',right:0,top:0,bottom:0,width:80,background:'linear-gradient(-90deg,var(--bg2),transparent)',zIndex:2,pointerEvents:'none'}}/>
@@ -325,7 +325,8 @@ function SpriteParade({ images }: { images: Record<string,{svg:string;png:string
           const imgData = images[num];
           if (!imgData) return null;
           return (
-            <div key={`${num}-${i}`} style={{flexShrink:0,width:48,height:48,position:'relative'}}>
+            <div key={`${num}-${i}`} className="parade-sprite" title={imgData.name}
+              style={{flexShrink:0,width:48,height:48,position:'relative'}}>
               <Sprite src={imgData.png||imgData.svg} name={imgData.name} size={48}/>
             </div>
           );
@@ -340,9 +341,10 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
   const VARIANTS = {1:'gold' as const,2:'silver' as const,3:'bronze' as const};
+  const foilClass = rank===1?' rank1-foil':'';
 
   return (
-    <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}`}
+    <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}${foilClass}`}
       style={{animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`}}>
       {/* ambient glow background */}
       <div style={{position:'absolute',inset:0,
@@ -376,7 +378,7 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
         </div>}
 
         {/* big number */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?(rank===1?20:16):rank===1?42:28,color:COLORS[rank],
+        <div className={rank===1?'rank-1-num':''} style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?(rank===1?20:16):rank===1?42:28,color:COLORS[rank],
           textShadow:`0 0 16px ${COLORS[rank]}, 0 0 32px ${COLORS[rank]}60, 0 0 48px ${COLORS[rank]}30`,
           lineHeight:1,marginBottom:2,letterSpacing:-1}}>
           {entry.collected}
@@ -681,10 +683,24 @@ export default function CC0Masters() {
   return (
     <div style={{background:'var(--black)',color:'var(--text)',minHeight:'100vh',fontFamily:'var(--ff-mono)'}}>
 
+      {/* Energy type rainbow bar */}
+      <div className="energy-bar" style={{position:'fixed',top:0,left:0,right:0,zIndex:9999,pointerEvents:'none'}}/>
       {/* moving scanline */}
-      <div style={{position:'fixed',top:0,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
+      <div style={{position:'fixed',top:3,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
         background:'linear-gradient(180deg,transparent,rgba(124,232,50,0.06),transparent)',
         animation:'scanline 8s linear infinite',opacity:0.7}}/>
+      {/* Floating pixel particles */}
+      <div className="particles-wrap" aria-hidden="true">
+        {[...Array(18)].map((_,i)=>(
+          <div key={i} className="particle" style={{
+            left:`${(i*5.5+7)%100}%`,
+            animationDuration:`${8+i*1.3}s`,
+            animationDelay:`${i*0.7}s`,
+            background:i%4===0?'var(--gold)':i%4===1?'#40b0ff':i%4===2?'#c080ff':'var(--lime)',
+            width:i%3===0?3:2,height:i%3===0?3:2,
+          }}/>
+        ))}
+      </div>
 
       {/* Toast notification */}
       {confirm&&(

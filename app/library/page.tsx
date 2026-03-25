@@ -31,6 +31,17 @@ const RC: Record<string,string> = {
 };
 const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary'];
 
+function normalizeRarity(input: unknown): string {
+  const v = String(input ?? '').trim().toLowerCase();
+  if (!v) return 'Common';
+  if (v === 'common') return 'Common';
+  if (v === 'uncommon') return 'Uncommon';
+  if (v === 'rare' || v === 'ultra rare') return 'Rare';
+  if (v === 'epic') return 'Epic';
+  if (v === 'legendary') return 'Legendary';
+  return String(input).trim();
+}
+
 
 
 let _dlgSetter: ((url:string|null)=>void)|null = null;
@@ -59,7 +70,6 @@ function ConfirmDlg({url,onOk,onNo}:{url:string;onOk:()=>void;onNo:()=>void}) {
     </div>
   );
 }
-
 /* Proxy CC0mon images through our CDN cache */
 function libProxyUrl(src: string): string {
   if (!src || !src.startsWith('https://api.cc0mon.com/')) return src;
@@ -577,11 +587,16 @@ function LibraryInner() {
   },[]);
 
   const energyList=Array.from(new Set(species.map(s=>s.energy))).sort();
+  const rarityCounts = species.reduce((acc, sp) => {
+    const key = normalizeRarity(sp.rarity);
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
   const filtered=species.filter(sp=>{
     const q=search.toLowerCase();
     if (q&&!sp.name.toLowerCase().includes(q)&&!String(sp.number).includes(q)&&!sp.energy.toLowerCase().includes(q)) return false;
     if (filterEnergy&&sp.energy!==filterEnergy) return false;
-    if (filterRarity&&sp.rarity!==filterRarity) return false;
+    if (filterRarity&&normalizeRarity(sp.rarity)!==filterRarity) return false;
     return true;
   }).slice().sort((a,b)=>{
     if (sortBy==='holders') return (holderMap[b.number]?.length??0)-(holderMap[a.number]?.length??0);
@@ -664,7 +679,7 @@ function LibraryInner() {
                   opacity:filterRarity&&filterRarity!==r?0.3:1,transition:'opacity 0.1s'}}>
                 <div style={{width:7,height:7,background:RC[r],boxShadow:`0 0 5px ${RC[r]}`}}/>
                 <span style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:RC[r],letterSpacing:0.5}}>
-                  {r.toUpperCase()}
+                  {r.toUpperCase()} ({rarityCounts[r] ?? 0})
                 </span>
               </div>
             ))}
@@ -692,7 +707,7 @@ function LibraryInner() {
             style={{fontFamily:'var(--ff-pixel)',fontSize:10,background:'var(--bg)',
               border:'1px solid var(--border)',color:'var(--text2)',padding:'7px 10px',cursor:'pointer'}}>
             <option value="">ALL RARITIES</option>
-            {RARITY_ORDER.map(r=><option key={r} value={r}>{r.toUpperCase()}</option>)}
+            {RARITY_ORDER.map(r=><option key={r} value={r}>{r.toUpperCase()} ({rarityCounts[r] ?? 0})</option>)}
           </select>
 
           {(search||filterEnergy||filterRarity)&&(

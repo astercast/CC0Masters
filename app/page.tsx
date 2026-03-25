@@ -426,13 +426,13 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
 
 function MobilePodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean }) {
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
-  const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
-  const pct = parseFloat(entry.progress);
+  const LABELS = {1:'CHAMPION',2:'2ND',3:'3RD'};
   const BAR_FILLS = {
     1: 'linear-gradient(90deg, #d8a620 0%, #ffd040 45%, #fff2a4 100%)',
     2: 'linear-gradient(90deg, #86a2a0 0%, #bcd7d2 45%, #edf8f4 100%)',
     3: 'linear-gradient(90deg, #9f5724 0%, #d48840 45%, #f0c080 100%)',
   };
+  const pct = parseFloat(entry.progress);
   return (
     <div
       onClick={onClick}
@@ -443,27 +443,19 @@ function MobilePodiumCard({ entry, rank, onClick, isOpen }: { entry:LeaderboardE
       <div className="podium-shell" />
       <div className="podium-noise" />
       <div className="podium-halo" />
-      <div className="pcm-left">
+      <div className="pcm-body">
         <span className="pcm-chip" style={{color:COLORS[rank],borderColor:`${COLORS[rank]}55`}}>{LABELS[rank]}</span>
         <div className="pcm-medal">
-          <MedalIcon rank={rank} size={rank===1?48:38}/>
+          <MedalIcon rank={rank} size={rank===1?46:36}/>
         </div>
-      </div>
-      <div className="pcm-divider" />
-      <div className="pcm-right">
-        <div className="pcm-addr">{entry.address.slice(0,6)}…{entry.address.slice(-4)}</div>
-        <div className="pcm-stat-row">
-          <span className="pcm-value" style={{color:COLORS[rank],fontSize:rank===1?22:18}}>{entry.collected}</span>
+        <div className="pcm-stat">
+          <span className="pcm-value" style={{color:COLORS[rank],fontSize:rank===1?19:15}}>{entry.collected}</span>
           <span className="pcm-total">/{TOTAL_SPECIES}</span>
-          <span className="pcm-species-label">SPECIES</span>
         </div>
         <div className="pcm-bar">
           <div className="pcm-bar-fill" style={{width:`${pct}%`,background:BAR_FILLS[rank]}} />
         </div>
-        <div className="pcm-bar-meta">
-          <span className="pcm-pct" style={{color:COLORS[rank]}}>{entry.progress}</span>
-          <span className="pcm-tokens">{entry.totalTokensHeld.toLocaleString()} TOKENS</span>
-        </div>
+        <span className="pcm-pct" style={{color:COLORS[rank]}}>{entry.progress}</span>
       </div>
     </div>
   );
@@ -1014,9 +1006,9 @@ export default function CC0Masters() {
               </div>
             </div>
             {mobile ? (
-              <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:8}}>
-                <MobilePodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address}/>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4,marginBottom:8}}>
                 <MobilePodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address}/>
+                <MobilePodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address}/>
                 <MobilePodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address}/>
               </div>
             ) : (

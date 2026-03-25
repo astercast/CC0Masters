@@ -27,7 +27,7 @@ const EC: Record<string,string> = {
   Celestial:'#ffd880',Fossil:'#d0b888',
 };
 const RC: Record<string,string> = {
-  Common:'#6a8a60', Uncommon:'#7ee832', Rare:'#40b0ff', Epic:'#c080ff', Legendary:'#ffd040',
+  Common:'#7ee832', Uncommon:'#40b0ff', Rare:'#c080ff', Epic:'#c080ff', Legendary:'#ffd040',
 };
 const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary'];
 

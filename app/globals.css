@@ -453,19 +453,23 @@ body::after {
   display: grid;
   place-items: center;
   min-height: 78px;
-  animation: podiumEmblemFloat 5.4s ease-in-out infinite;
 }
 
-.podium-card.rank-1 .podium-medal-wrap {
+.podium-medal-wrap svg {
+  animation: podiumEmblemFloat 3.9s ease-in-out infinite;
+  will-change: transform;
+}
+
+.podium-card.rank-1 .podium-medal-wrap svg {
   animation-delay: 0s;
 }
 
-.podium-card.rank-2 .podium-medal-wrap {
-  animation-delay: 0.45s;
+.podium-card.rank-2 .podium-medal-wrap svg {
+  animation-delay: 0.42s;
 }
 
-.podium-card.rank-3 .podium-medal-wrap {
-  animation-delay: 0.9s;
+.podium-card.rank-3 .podium-medal-wrap svg {
+  animation-delay: 0.84s;
 }
 
 .podium-medal-ring {
@@ -763,8 +767,8 @@ body::after {
 }
 
 @keyframes podiumEmblemFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-9px); }
+  0%, 100% { transform: translate3d(0, 0px, 0) scale(1); }
+  50% { transform: translate3d(0, -12px, 0) scale(1.035); }
 }
 
 /* ── Ticker/marquee ── */

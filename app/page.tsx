@@ -603,13 +603,20 @@ export default function CC0Masters() {
 
   const handlePodiumClick = (address: string) => {
     pulseHaptics([12, 18, 12]);
-    // Scroll to the row in the rankings table and open it there
     setOpenRow(address);
+    const rankingsTop = rankingsRef.current
+      ? window.scrollY + rankingsRef.current.getBoundingClientRect().top - 18
+      : null;
+
+    if (rankingsTop !== null) {
+      window.scrollTo({ top: Math.max(0, rankingsTop), behavior: 'smooth' });
+    }
+
     setTimeout(()=>{
       const el = rowRefs.current[address];
       if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
       else rankingsRef.current?.scrollIntoView({ behavior:'smooth', block:'start' });
-    }, 80);
+    }, 360);
   };
 
   const fetchLeaderboard = useCallback(async()=>{

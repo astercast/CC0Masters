@@ -1070,7 +1070,7 @@ export default function CC0Masters() {
                               border:`1px solid ${entry.missing===0?'var(--green2)':entry.missing<10?'rgba(255,160,64,0.4)':'var(--border)'}`,
                               background:entry.missing===0?'rgba(124,232,50,0.08)':'transparent',
                               padding:'2px 6px'}}>
-                              {entry.missing===0?'✓ FULL':`${entry.missing} LEFT`}
+                              {entry.missing===0?'✓ COMPLETE':`NEEDS ${entry.missing}`}
                             </span>
                           </div>
                           {/* Row 2: progress bar + species/pct */}
@@ -1097,15 +1097,23 @@ export default function CC0Masters() {
               ):(
                 /* ── DESKTOP: full table ── */
                 <div style={{overflowX:'auto'}}>
-                  <table className="lb-table" style={{width:'100%'}}>
+                  <table className="lb-table" style={{width:'100%',tableLayout:'fixed'}}>
+                    <colgroup>
+                      <col style={{width:'4%'}}/>
+                      <col style={{width:'17%'}}/>
+                      <col style={{width:'35%'}}/>
+                      <col style={{width:'8%'}}/>
+                      <col style={{width:'20%'}}/>
+                      <col style={{width:'16%'}}/>
+                    </colgroup>
                     <thead>
                       <tr>
-                        <th className="lb-th" style={{textAlign:'center',width:36,padding:'12px 6px'}}>#</th>
-                        <th className="lb-th" style={{textAlign:'left',padding:'12px 10px'}}>WALLET</th>
-                        <th className="lb-th" style={{textAlign:'left',padding:'12px 10px'}}>PROGRESS</th>
-                        <th className="lb-th" style={{textAlign:'center',width:60,padding:'12px 6px'}}>TOKENS</th>
-                        <th className="lb-th" style={{textAlign:'center',width:90,padding:'12px 6px'}}>ENERGY</th>
-                        <th className="lb-th" style={{textAlign:'center',width:80,padding:'12px 6px'}}>STATUS</th>
+                        <th className="lb-th" style={{textAlign:'center'}}>#</th>
+                        <th className="lb-th" style={{textAlign:'left'}}>WALLET</th>
+                        <th className="lb-th" style={{textAlign:'left'}}>PROGRESS</th>
+                        <th className="lb-th" style={{textAlign:'center'}}>TOKENS</th>
+                        <th className="lb-th" style={{textAlign:'center'}}>ENERGY</th>
+                        <th className="lb-th" style={{textAlign:'center'}}>STATUS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1126,49 +1134,60 @@ export default function CC0Masters() {
                                 :i===2?`linear-gradient(90deg,rgba(200,112,48,0.04) 0%,transparent 60%)`
                                 :isOpen?'rgba(124,232,50,0.03)':'',
                             }}>
-                            <td style={{textAlign:'center',padding:'10px 6px',width:36}}>
+                            <td style={{textAlign:'center'}}>
                               <span style={{
                                 fontFamily:'var(--ff-pixel)',
-                                fontSize:i<3?14:11,
+                                fontSize:i<3?15:12,
+                                fontWeight:i<3?700:400,
                                 color:rankColor,
+                                textShadow:i<3?`0 0 8px ${rankColor}40`:'none',
                               }}>{i+1}</span>
                             </td>
-                            <td style={{padding:'10px 10px'}}><AddressDisplay address={entry.address}/></td>
-                            <td style={{padding:'10px 10px'}}>
-                              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <td><AddressDisplay address={entry.address}/></td>
+                            <td>
+                              <div style={{display:'flex',alignItems:'center',gap:10}}>
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:i<3?17:13,color:rankColor,
-                                  minWidth:46,flexShrink:0,
+                                  fontFamily:'var(--ff-pixel)',fontSize:i<3?18:14,color:rankColor,
+                                  minWidth:50,flexShrink:0,
                                 }}>{entry.collected}<span style={{fontSize:9,color:'var(--text3)',marginLeft:2}}>/{TOTAL_SPECIES}</span></span>
-                                <div style={{flex:1,minWidth:60,maxWidth:160}}>
-                                  <ProgressBar pct={pct} variant={pv} height={5}/>
+                                <div style={{flex:1,minWidth:50}}>
+                                  <ProgressBar pct={pct} variant={pv} height={6}/>
                                 </div>
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:10,
+                                  fontFamily:'var(--ff-mono)',fontSize:11,fontWeight:600,
                                   color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text2)',
-                                  flexShrink:0,
+                                  flexShrink:0,minWidth:42,textAlign:'right',
                                 }}>{entry.progress}</span>
                               </div>
                             </td>
-                            <td style={{textAlign:'center',padding:'10px 6px'}}><span style={{fontFamily:'var(--ff-mono)',fontSize:12,color:'var(--text2)'}}>{entry.totalTokensHeld.toLocaleString()}</span></td>
-                            <td style={{textAlign:'center',padding:'10px 4px'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
-                            <td style={{textAlign:'center',padding:'10px 6px'}}>
+                            <td style={{textAlign:'center'}}>
+                              <span style={{
+                                fontFamily:'var(--ff-mono)',fontSize:13,fontWeight:600,
+                                color:entry.totalTokensHeld>300?'var(--bright)':'var(--text2)',
+                              }}>{entry.totalTokensHeld.toLocaleString()}</span>
+                            </td>
+                            <td style={{textAlign:'center'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
+                            <td style={{textAlign:'center'}}>
                               {entry.missing===0?(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1,
+                                  fontFamily:'var(--ff-pixel)',fontSize:10,letterSpacing:1,
                                   color:'var(--lime)',
                                   border:'1px solid var(--green2)',
-                                  background:'rgba(124,232,50,0.08)',
-                                  padding:'2px 6px',
+                                  background:'rgba(124,232,50,0.12)',
+                                  padding:'3px 8px',borderRadius:2,
                                   whiteSpace:'nowrap',display:'inline-block',
-                                }}>✓ FULL</span>
+                                }}>✓ COMPLETE</span>
                               ):(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:10,
-                                  color:entry.missing<5?'var(--amber)':entry.missing<30?'var(--text)':'var(--text2)',
+                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:0.5,
+                                  color:entry.missing<5?'var(--amber)':entry.missing<30?'var(--text)':'var(--text3)',
                                   whiteSpace:'nowrap',
+                                  background:entry.missing<5?'rgba(255,180,50,0.08)':'rgba(255,255,255,0.03)',
+                                  border:entry.missing<5?'1px solid rgba(255,180,50,0.2)':'1px solid rgba(255,255,255,0.05)',
+                                  padding:'3px 6px',borderRadius:2,
+                                  display:'inline-block',
                                 }}>
-                                  −{entry.missing}
+                                  NEEDS {entry.missing}
                                 </span>
                               )}
                             </td>

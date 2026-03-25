@@ -989,7 +989,7 @@ export default function CC0Masters() {
                 </div>
               ):(
                 <table className="lb-table">
-                  <thead><tr>{['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+                  <thead><tr>{['#','WALLET','COLLECTED','COMPLETION','TOKENS','ENERGY','STATUS'].map(h=><th key={h}>{h}</th>)}</tr></thead>
                   <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={false}/>)}</tbody>
                 </table>
               )}
@@ -1071,9 +1071,27 @@ export default function CC0Masters() {
                   <table className="lb-table">
                     <thead>
                       <tr style={{background:'linear-gradient(90deg,var(--bg) 0%,var(--bg2) 100%)'}}>
-                        {['#','WALLET','SPECIES','PROGRESS','%','TOKENS','ENERGIES','MISSING'].map(h=>(
-                          <th key={h} style={{borderRight:'1px solid var(--border)',letterSpacing:1.5,
-                            background:'transparent'}}>{h}</th>
+                        {[
+                          ['#', 'w-12 text-center'],
+                          ['WALLET', ''],
+                          ['COLLECTED', ''],
+                          ['COMPLETION', 'min-w-[180px]'],
+                          ['TOKENS', ''],
+                          ['ENERGY', ''],
+                          ['STATUS', ''],
+                        ].map(([h])=>(
+                          <th key={h as string} style={{
+                            borderRight:'none',
+                            borderBottom:'2px solid var(--green1)',
+                            letterSpacing:2,
+                            padding:'12px 16px',
+                            fontFamily:'var(--ff-pixel)',
+                            fontSize:10,
+                            color:'var(--text3)',
+                            background:'transparent',
+                            textAlign:'left',
+                            whiteSpace:'nowrap',
+                          }}>{h as string}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1088,47 +1106,72 @@ export default function CC0Masters() {
                           <tr key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}} className={`lb-row${isOpen?' open':''}`}
                             onClick={()=>setOpenRow(isOpen?null:entry.address)}
                             style={{
-                              animation:`fadeUp 0.3s ease ${Math.min(i*16,480)}ms both`,
+                              animation:`fadeUp 0.25s ease ${Math.min(i*14,420)}ms both`,
                               borderLeft:i<3?`3px solid ${rankColor}`:'3px solid transparent',
-                              background:i===0?`linear-gradient(90deg,rgba(255,208,64,0.04) 0%,transparent 40%)`
-                                :i===1?`linear-gradient(90deg,rgba(144,184,160,0.03) 0%,transparent 40%)`
-                                :i===2?`linear-gradient(90deg,rgba(200,112,48,0.03) 0%,transparent 40%)`:'',
+                              background:i===0?`linear-gradient(90deg,rgba(255,208,64,0.05) 0%,transparent 60%)`
+                                :i===1?`linear-gradient(90deg,rgba(144,184,160,0.04) 0%,transparent 60%)`
+                                :i===2?`linear-gradient(90deg,rgba(200,112,48,0.04) 0%,transparent 60%)`
+                                :isOpen?'rgba(124,232,50,0.03)':'',
                             }}>
-                            <td style={{width:38,textAlign:'center',padding:'0 8px'}}>
-                              <div style={{
-                                fontFamily:'var(--ff-pixel)',fontSize:i<3?17:13,color:rankColor,
-                                textShadow:i<3?`0 0 10px ${rankColor}, 0 0 20px ${rankColor}60`:'none',
-                                background:i<3?`${rankColor}10`:'transparent',
-                                border:i<3?`1px solid ${rankColor}30`:'none',
-                                padding:i<3?'3px 6px':'2px',
-                                display:'inline-block',minWidth:24,textAlign:'center'}}>
-                                {i+1}
-                              </div>
+                            <td style={{width:52,textAlign:'center',padding:'0 10px'}}>
+                              <span style={{
+                                fontFamily:'var(--ff-pixel)',
+                                fontSize:i<3?16:12,
+                                color:rankColor,
+                                textShadow:i<3?`0 0 12px ${rankColor}90`:'none',
+                                letterSpacing:0.5,
+                              }}>{i+1}</span>
                             </td>
                             <td><AddressDisplay address={entry.address}/></td>
-                            <td>
-                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
-                                textShadow:i<3?`0 0 8px ${rankColor}60`:'none'}}>{entry.collected}</span>
-                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text2)',marginLeft:4}}>/{TOTAL_SPECIES}</span>
+                            <td style={{padding:'14px 20px',whiteSpace:'nowrap'}}>
+                              <span style={{
+                                fontFamily:'var(--ff-pixel)',fontSize:i<3?22:16,color:rankColor,
+                                textShadow:i<3?`0 0 10px ${rankColor}70`:'none',
+                                letterSpacing:'-0.5px',
+                              }}>{entry.collected}</span>
+                              <span style={{
+                                fontFamily:'var(--ff-pixel)',fontSize:10,
+                                color:'var(--text3)',marginLeft:4,
+                              }}>/ {TOTAL_SPECIES}</span>
                             </td>
-                            <td style={{minWidth:90}}><ProgressBar pct={pct} variant={pv} height={5}/></td>
-                            <td>
-                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:14,color:pct>80?'var(--bright)':'var(--text)',
-                                textShadow:pct>80?'0 0 8px rgba(168,255,64,0.4)':'none'}}>{entry.progress}</span>
+                            <td style={{minWidth:180,padding:'14px 16px'}}>
+                              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                                <div style={{flex:1}}>
+                                  <ProgressBar pct={pct} variant={pv} height={6}/>
+                                </div>
+                                <span style={{
+                                  fontFamily:'var(--ff-pixel)',fontSize:12,
+                                  color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text2)',
+                                  textShadow:pct>=100?'0 0 10px var(--lime)':pct>80?'0 0 8px rgba(168,255,64,0.4)':'none',
+                                  minWidth:44,textAlign:'right',
+                                }}>{entry.progress}</span>
+                              </div>
                             </td>
-                            <td><span style={{fontFamily:'var(--ff-mono)',fontSize:16,color:'var(--text2)'}}>{entry.totalTokensHeld}</span></td>
-                            <td><EnergyDots byEnergy={entry.byEnergy}/></td>
-                            <td>
-                              <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,letterSpacing:0.5,
-                                color:entry.missing===0?'var(--lime)':entry.missing<10?'var(--amber)':'var(--text2)',
-                                border:`1px solid ${entry.missing===0?'var(--green2)':entry.missing<10?'rgba(255,160,64,0.4)':'var(--border)'}`,
-                                background:entry.missing===0?'rgba(124,232,50,0.08)':'transparent',
-                                padding:'2px 6px'}}>
-                                {entry.missing===0?'✓ COMPLETE':`${entry.missing} LEFT`}
-                              </span>
+                            <td style={{padding:'14px 16px'}}><span style={{fontFamily:'var(--ff-mono)',fontSize:14,color:'var(--text2)',letterSpacing:0.5}}>{entry.totalTokensHeld.toLocaleString()}</span></td>
+                            <td style={{padding:'14px 16px'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
+                            <td style={{padding:'14px 16px'}}>
+                              {entry.missing===0?(
+                                <span style={{
+                                  fontFamily:'var(--ff-pixel)',fontSize:10,letterSpacing:1.5,
+                                  color:'var(--lime)',
+                                  border:'1px solid var(--green2)',
+                                  background:'rgba(124,232,50,0.08)',
+                                  padding:'3px 8px',
+                                  boxShadow:'0 0 8px rgba(124,232,50,0.15)',
+                                  whiteSpace:'nowrap',
+                                }}>✓ COMPLETE</span>
+                              ):(
+                                <span style={{
+                                  fontFamily:'var(--ff-pixel)',fontSize:11,
+                                  color:entry.missing<5?'var(--amber)':entry.missing<30?'var(--text)':'var(--text2)',
+                                  whiteSpace:'nowrap',
+                                }}>
+                                  <span style={{opacity:0.4,marginRight:3}}>−</span>{entry.missing}
+                                </span>
+                              )}
                             </td>
                           </tr>,
-                          isOpen&&<tr key={`${entry.address}-d`}><td colSpan={8} style={{padding:0}}>
+                          isOpen&&<tr key={`${entry.address}-d`}><td colSpan={7} style={{padding:0}}>
                             <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
                           </td></tr>,
                         ];

@@ -216,27 +216,45 @@ body::after {
 /* ── Table ── */
 .lb-table { width: 100%; border-collapse: collapse; }
 .lb-table th {
-  padding: 9px 12px;
+  padding: 12px 16px;
   font-family: var(--ff-pixel);
-  font-size: 12px;
-  color: var(--lime);
+  font-size: 10px;
+  color: var(--text3);
   text-align: left;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   border-bottom: 2px solid var(--green1);
-  border-right: 1px solid var(--border);
-  background: var(--bg2);
+  border-right: none;
+  background: transparent;
   text-transform: uppercase;
   white-space: nowrap;
 }
 .lb-row {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(30,58,26,0.5);
   cursor: pointer;
-  transition: background 0.08s;
+  transition: background 0.1s ease;
+  position: relative;
 }
-.lb-row:hover { background: rgba(124,232,50,0.04); }
-.lb-row.open   { background: rgba(124,232,50,0.06); border-bottom-color: var(--green2); }
-.lb-row td { padding: 11px 12px; vertical-align: middle; }
-.lb-row td + td { border-left: 1px solid var(--border); }
+.lb-row:hover {
+  background: rgba(124,232,50,0.035) !important;
+}
+.lb-row.open {
+  background: rgba(124,232,50,0.05) !important;
+  border-bottom-color: var(--green2);
+}
+.lb-row td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  border-right: none;
+}
+/* Subtle left-border hover sweep */
+.lb-row::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--lime);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.lb-row:hover::before { opacity: 0.4; }
 
 /* ── Detail panel ── */
 .detail-panel {

@@ -347,13 +347,14 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
             [sp.rarity,sp.rarity==='Legendary'?'⭐ RARITY':'RARITY',rc],
           ] as [any,string,string][]).map(([v,l,c])=>(
             <div key={l} style={{background:'var(--bg)',border:`1px solid ${c}18`,
-              padding:'14px 16px',position:'relative',overflow:'hidden'}}>
+              padding:mobile?'10px 8px':'14px 16px',position:'relative',overflow:'hidden',minWidth:0}}>
               <div style={{position:'absolute',top:0,left:0,right:0,height:2,
                 background:`linear-gradient(90deg,transparent,${c}80,transparent)`}}/>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:22,color:c,
-                marginBottom:5,textShadow:`0 0 12px ${c}50`}}>{v}</div>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',
-                letterSpacing:2}}>{l}</div>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?'clamp(12px,4vw,18px)':22,color:c,
+                marginBottom:5,textShadow:`0 0 12px ${c}50`,
+                overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v}</div>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:9,color:'var(--text3)',
+                letterSpacing:mobile?1:2}}>{l}</div>
             </div>
           ))}
         </div>

@@ -1,0 +1,22 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/cron/route": "/api/cron",
+  "/api/debug/route": "/api/debug",
+  "/api/desc/route": "/api/desc",
+  "/api/leaderboard/route": "/api/leaderboard",
+  "/api/migrate/route": "/api/migrate",
+  "/api/og/route": "/api/og",
+  "/api/registry/route": "/api/registry",
+  "/api/rpc/route": "/api/rpc",
+  "/api/sales/route": "/api/sales",
+  "/api/save/route": "/api/save",
+  "/api/sprite/route": "/api/sprite",
+  "/api/supply/route": "/api/supply",
+  "/api/trigger/route": "/api/trigger",
+  "/dex/page": "/dex",
+  "/favicon.ico/route": "/favicon.ico",
+  "/library/page": "/library",
+  "/page": "/",
+  "/pokedex/page": "/pokedex"
+}

@@ -1,0 +1,22 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/cron/route": "app/api/cron/route.js",
+  "/api/debug/route": "app/api/debug/route.js",
+  "/api/desc/route": "app/api/desc/route.js",
+  "/api/leaderboard/route": "app/api/leaderboard/route.js",
+  "/api/migrate/route": "app/api/migrate/route.js",
+  "/api/og/route": "app-edge-has-no-entrypoint",
+  "/api/registry/route": "app/api/registry/route.js",
+  "/api/rpc/route": "app/api/rpc/route.js",
+  "/api/sales/route": "app/api/sales/route.js",
+  "/api/save/route": "app/api/save/route.js",
+  "/api/sprite/route": "app/api/sprite/route.js",
+  "/api/supply/route": "app/api/supply/route.js",
+  "/api/trigger/route": "app/api/trigger/route.js",
+  "/dex/page": "app/dex/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/library/page": "app/library/page.js",
+  "/page": "app/page.js",
+  "/pokedex/page": "app/pokedex/page.js"
+}

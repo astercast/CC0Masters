@@ -1,0 +1,12 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/app/pokedex/page": [
+      "static/media/de161955856a921d-s.p.25da2b95.woff2",
+      "static/media/99e609270109b47d-s.p.64b9304e.woff2",
+      "static/media/a7e15459c1805da0-s.p.ec654d65.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}

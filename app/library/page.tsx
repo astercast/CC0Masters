@@ -1,11 +1,10 @@
 'use client';
 import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect as useEffectMobile, useState as useStateMobile } from 'react';
 
 function useMobile() {
-  const [m,setM] = useStateMobile(false);
-  useEffectMobile(()=>{
+  const [m,setM] = useState(false);
+  useEffect(()=>{
     const check=()=>setM(window.innerWidth<700);
     check(); window.addEventListener('resize',check);
     return()=>window.removeEventListener('resize',check);
@@ -38,12 +37,12 @@ function ConfirmDlg({url,onOk,onNo}:{url:string;onOk:()=>void;onNo:()=>void}) {
   return (
     <div style={{position:'fixed',inset:0,zIndex:99999,background:'rgba(0,0,0,0.82)',display:'flex',
       alignItems:'center',justifyContent:'center'}} onClick={onNo}>
-      <div style={{background:'var(--bg2)',border:'2px solid var(--green2)',padding:'28px 32px',
+      <div style={{background:'var(--bg2)',border:'2px solid var(--lime)',padding:'28px 32px',
         maxWidth:380,width:'90%',animation:'fadeUp 0.18s ease'}} onClick={e=>e.stopPropagation()}>
         <div style={{textAlign:'center',marginBottom:20}}>
           <div style={{fontSize:30,marginBottom:10}}>🌊</div>
-          <div style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--bright)',letterSpacing:2,marginBottom:8}}>OPENING OPENSEA</div>
-          <div style={{fontFamily:'var(--ff-mono)',fontSize:11,color:'var(--text2)',wordBreak:'break-all',
+          <div style={{fontFamily:'var(--font-press-start)',fontSize:12,color:'var(--lime-glow)',letterSpacing:2,marginBottom:8}}>OPENING OPENSEA</div>
+          <div style={{fontFamily:'var(--font-plex-mono)',fontSize:11,color:'var(--text)',wordBreak:'break-all',
             background:'var(--bg)',border:'1px solid var(--border)',padding:'6px 10px'}}>{url}</div>
         </div>
         <div style={{display:'flex',gap:10}}>
@@ -86,65 +85,31 @@ function Sprite({src,name,size=56,dimmed=false}:{src:string;name:string;size?:nu
 function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void}) {
   const col=EC[sp.energy]||'#7ee832';
   const rc=RC[sp.rarity]||'#90c880';
-  const [hov,setHov]=useState(false);
+  
   return (
-    <div onClick={onClick}
-      className={`species-card-wrap card-${sp.energy.toLowerCase()} rarity-${sp.rarity.toLowerCase()}`}
-      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{'--card-col':col,
-        background:hov
-          ?`linear-gradient(145deg,${col}12 0%,var(--bg3) 40%,var(--panel) 100%)`
-          :`linear-gradient(145deg,var(--bg3) 0%,var(--panel) 100%)`,
-        border:`1px solid ${hov?col+'80':col+'20'}`,
-        cursor:'pointer',position:'relative',overflow:'hidden',
-        transform:hov?'translateY(-4px) scale(1.02)':'none',
-        boxShadow:hov?`0 12px 32px ${col}18, 0 4px 12px rgba(0,0,0,0.4)`:
-          `0 2px 8px rgba(0,0,0,0.3)`,
-        transition:'all 0.15s ease',
-      } as React.CSSProperties}>
-      {/* Holo sheen */}
+    <div onClick={onClick} className={`species-card-wrap card-${sp.energy.toLowerCase()} rarity-${sp.rarity.toLowerCase()}`}>
       <div className="holo-sheen"/>
-      <div className="card-accent-bar"/>
-      {/* Energy color top bar */}
-      <div style={{position:'absolute',top:0,left:0,right:0,height:3,
-        background:`linear-gradient(90deg,transparent,${col},transparent)`,
-        opacity:hov?1:0.5,transition:'opacity 0.15s'}}/>
-      {/* # badge */}
-      <div className="species-num-badge" style={{position:'absolute',top:6,left:7,fontFamily:'var(--ff-pixel)',fontSize:11,
-        color:hov?col:'var(--text2)',letterSpacing:0.5,fontWeight:'bold',
-        textShadow:hov?`0 0 8px ${col}80`:'none',
-        transition:'all 0.15s'}}>#{String(sp.number).padStart(3,'0')}</div>
-      {/* rarity gem */}
-      <div className={`rarity-dot-${sp.rarity.toLowerCase()}`} style={{position:'absolute',top:8,right:8,width:7,height:7,background:rc,
-        boxShadow:hov?`0 0 8px ${rc}, 0 0 16px ${rc}60`:`0 0 4px ${rc}80`,
-        transition:'box-shadow 0.15s'}}/>
-      {/* sprite area */}
-      <div style={{padding:'26px 8px 6px',display:'flex',flexDirection:'column',alignItems:'center',gap:5}}>
-        <div style={{position:'relative'}}>
-          {hov&&<div style={{position:'absolute',inset:-4,background:`radial-gradient(circle,${col}20 0%,transparent 70%)`,pointerEvents:'none'}}/>}
-          <div className="sprite-hover-wrap"><Sprite src={sp.png||sp.svg||''} name={sp.name} size={68}/></div>
-        </div>
-        {/* name */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:'clamp(7px,1.1vw,9px)',
-          color:hov?'var(--bright)':'var(--text)',textAlign:'center',
-          whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',width:'100%',
-          paddingInline:4,transition:'color 0.15s',letterSpacing:0.3}}>
-          {sp.name}
-        </div>
-        {/* energy pill */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:7,color:col,
-          padding:'1px 6px',border:`1px solid ${col}50`,background:`${col}12`,
-          letterSpacing:0.8,whiteSpace:'nowrap'}}>
+      <div className="card-accent-bar" style={{'--card-col': col} as React.CSSProperties}/>
+      
+      <div className="card-header">
+        <div className="species-num-badge">#{String(sp.number).padStart(3,'0')}</div>
+        <div className={`rarity-dot-${sp.rarity.toLowerCase()}`} style={{backgroundColor: rc}}/>
+      </div>
+      
+      <div className="sprite-container">
+        <div className="sprite-bg" style={{'--card-col': col} as React.CSSProperties}/>
+        <Sprite src={sp.png||sp.svg||''} name={sp.name} size={68}/>
+      </div>
+      
+      <div className="card-footer">
+        <div className="species-name">{sp.name}</div>
+        <div className="species-energy" style={{color: col, borderColor: `${col}50`, backgroundColor: `${col}12`}}>
           {sp.energy.toUpperCase()}
         </div>
-        {/* holders */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:8,
-          color:holders>0?'var(--text2)':'var(--text3)',letterSpacing:0.3}}>
-          {holders>0?`${holders} holders`:'—'}
+        <div className="species-holders">
+          {holders > 0 ? `${holders} holders` : '—'}
         </div>
       </div>
-      {/* bottom shimmer on hover */}
-      {hov&&<div style={{position:'absolute',bottom:0,left:0,right:0,height:1,background:`linear-gradient(90deg,transparent,${col}60,transparent)`}}/>}
     </div>
   );
 }
@@ -495,7 +460,7 @@ function LibraryInner() {
   },[]);
 
   const energyList=Array.from(new Set(species.map(s=>s.energy))).sort();
-  const filtered=species.filter(sp=>{
+  const sorted = species.filter(sp=>{
     const q=search.toLowerCase();
     if (q&&!sp.name.toLowerCase().includes(q)&&!String(sp.number).includes(q)&&!sp.energy.toLowerCase().includes(q)) return false;
     if (filterEnergy&&sp.energy!==filterEnergy) return false;
@@ -506,219 +471,85 @@ function LibraryInner() {
     return a.number-b.number;
   });
 
-  const selectSpecies=(sp:Species)=>{
+  const handleSelect = (sp: Species) => {
     setSelected(sp);
-    router.replace(`/library?species=${sp.number}`,{scroll:false});
-  };
-  const closeModal=()=>{
-    setSelected(null);
-    router.replace('/library',{scroll:false});
-  };
-  const navSpecies=(n:number)=>{
-    const sp=species.find(s=>s.number===n);
-    if (sp) { setSelected(sp); router.replace(`/library?species=${n}`,{scroll:false}); }
+    router.push(`/library?species=${sp.number}`, { scroll: false });
   };
 
-  const totalWithHolders=Object.values(holderMap).filter(v=>v.length>0).length;
+  const handleClose = () => {
+    setSelected(null);
+    router.push('/library', { scroll: false });
+  };
 
   return (
-    <div style={{background:'var(--black)',color:'var(--text)',minHeight:'100vh',fontFamily:'var(--ff-mono)'}}>
-      <div className="energy-bar" style={{position:'fixed',top:0,left:0,right:0,zIndex:9999,pointerEvents:'none'}}/>
-      <div style={{position:'fixed',top:3,left:0,right:0,height:3,zIndex:9996,pointerEvents:'none',
-        background:'linear-gradient(180deg,transparent,rgba(124,232,50,0.06),transparent)',
-        animation:'scanline 8s linear infinite',opacity:0.7}}/>
-
-      {confirm&&<ConfirmDlg url={confirm}
-        onOk={()=>{window.open(confirm,'_blank','noopener');setConfirm(null);}}
-        onNo={()=>setConfirm(null)}/>}
-
-      {/* ── HEADER ── */}
-      <header className="library-header" style={{background:'var(--bg2)',borderBottom:'2px solid var(--green1)',position:'sticky',top:0,zIndex:100}}>
-        {/* top strip */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-          padding:'8px 24px',borderBottom:'1px solid var(--border)',background:'var(--bg)'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <button className="btn btn-filter" onClick={()=>{
-                if (window.history.length>1) router.back();
-                else router.push('/');
-              }}
-              style={{fontSize:11,letterSpacing:1,gap:5}}>← BACK</button>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',letterSpacing:2}}>
-              ▶ CC0MON LIBRARY
-            </span>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
-            <div style={{width:6,height:6,background:'var(--lime)',
-              boxShadow:'0 0 8px var(--lime)',animation:'pulse 1.5s ease-in-out infinite'}}/>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--lime)',letterSpacing:2}}>LIVE</span>
-          </div>
-        </div>
-
-        {/* title + stats */}
-        <div style={{padding:'16px 24px 0',display:'flex',alignItems:'flex-end',gap:24,flexWrap:'wrap'}}>
-          <div>
-            <div style={{position:'relative',marginBottom:4}}>
-              {['rgba(255,0,80,0.1)','rgba(0,220,255,0.1)'].map((c,i)=>(
-                <div key={i} style={{position:'absolute',top:0,left:0,
-                  fontFamily:'var(--ff-pixel)',fontSize:'clamp(24px,4vw,40px)',
-                  color:c,letterSpacing:2,transform:`translateX(${i?2:-2}px)`,
-                  pointerEvents:'none',userSelect:'none'}}>CC0MON LIBRARY</div>
-              ))}
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:'clamp(24px,4vw,40px)',
-                color:'var(--bright)',letterSpacing:2,
-                textShadow:'0 0 12px var(--lime),0 0 32px rgba(124,232,50,0.4),3px 3px 0 rgba(0,0,0,0.8)'}}>
-                CC0MON LIBRARY
-              </div>
-            </div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
-              letterSpacing:2,marginBottom:14}}>
-            </div>
-          </div>
-          {/* quick rarity legend */}
-          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14,marginLeft:'auto'}}>
-            {RARITY_ORDER.map(r=>(
-              <div key={r} onClick={()=>setFilterRarity(filterRarity===r?'':r)}
-                style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
-                  opacity:filterRarity&&filterRarity!==r?0.3:1,transition:'opacity 0.1s'}}>
-                <div style={{width:7,height:7,background:RC[r],boxShadow:`0 0 5px ${RC[r]}`}}/>
-                <span style={{fontFamily:'var(--ff-pixel)',fontSize:8,color:RC[r],letterSpacing:0.5}}>
-                  {r.toUpperCase()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* search + filters */}
-        <div style={{padding:'0 24px 12px',display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
-          <input type="text" placeholder="SEARCH NAME, #, ENERGY..." value={search}
-            onChange={e=>setSearch(e.target.value)}
-            style={{fontFamily:'var(--ff-pixel)',fontSize:11,background:'var(--bg)',
-              border:'1px solid var(--border)',color:'var(--text)',padding:'7px 12px',
-              outline:'none',width:220,letterSpacing:0.5,transition:'border-color 0.1s'}}
-            onFocus={e=>e.target.style.borderColor='var(--lime)'}
-            onBlur={e=>e.target.style.borderColor='var(--border)'}/>
-
-          <select value={filterEnergy} onChange={e=>setFilterEnergy(e.target.value)}
-            style={{fontFamily:'var(--ff-pixel)',fontSize:10,background:'var(--bg)',
-              border:'1px solid var(--border)',color:'var(--text2)',padding:'7px 10px',cursor:'pointer'}}>
-            <option value="">ALL ENERGIES</option>
-            {energyList.map(e=><option key={e} value={e}>{e.toUpperCase()}</option>)}
-          </select>
-
-          <select value={filterRarity} onChange={e=>setFilterRarity(e.target.value)}
-            style={{fontFamily:'var(--ff-pixel)',fontSize:10,background:'var(--bg)',
-              border:'1px solid var(--border)',color:'var(--text2)',padding:'7px 10px',cursor:'pointer'}}>
-            <option value="">ALL RARITIES</option>
-            {RARITY_ORDER.map(r=><option key={r} value={r}>{r.toUpperCase()}</option>)}
-          </select>
-
-          {(search||filterEnergy||filterRarity)&&(
-            <button className="btn btn-filter"
-              onClick={()=>{setSearch('');setFilterEnergy('');setFilterRarity('');}}
-              style={{fontSize:10}}>✕ CLEAR</button>
-          )}
-
-          <div style={{display:'flex',gap:4,marginLeft:4,alignItems:'center'}}>
-            <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)',letterSpacing:1,marginRight:2}}>SORT:</span>
-            <button className={`btn btn-filter${sortBy==='number'?' active':''}`}
-              onClick={()=>setSortBy('number')} style={{fontSize:9,letterSpacing:1,padding:'5px 8px'}}>
-              # DEX
-            </button>
-            <button className={`btn btn-filter${sortBy==='holders'?' active':''}`}
-              onClick={()=>setSortBy('holders')} style={{fontSize:9,letterSpacing:1,padding:'5px 8px'}}>
-              ◈ HOLDERS
-            </button>
-
-          </div>
-          <div style={{display:'flex',gap:4,marginLeft:4}}>
-            {(['grid','list'] as const).map(v=>(
-              <button key={v} className={`btn btn-filter${view===v?' active':''}`}
-                onClick={()=>setView(v)} style={{fontSize:10,padding:'5px 10px'}}>
-                {v==='grid'?'▦ GRID':'☰ LIST'}
-              </button>
-            ))}
-          </div>
-
-          <div style={{marginLeft:'auto',fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text2)'}}>
-            {filtered.length}/{species.length}
-          </div>
-        </div>
+    <div className="library-container">
+      <header className="library-header">
+        <h1>Species Library</h1>
+        <p>Explore the rich biodiversity of the cc0mon world.</p>
+        <button className="btn" onClick={() => router.push('/')}>
+          Back to Leaderboard
+        </button>
       </header>
 
-      {/* ── GRID / LIST ── */}
-      <main className="library-grid" style={{padding:'20px 24px',maxWidth:1600,margin:'0 auto',
-        backgroundImage:'radial-gradient(circle,var(--green0) 1px,transparent 1px)',
-        backgroundSize:'28px 28px'}}>
+      {/* Filters */}
+      <div className="filters">
+        <input
+          type="text"
+          placeholder="Search by name, number, or energy..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="filter-search"
+        />
+        <select value={filterEnergy} onChange={(e) => setFilterEnergy(e.target.value)} className="filter-select">
+          <option value="">All Energies</option>
+          {energyList.map(e => <option key={e} value={e}>{e}</option>)}
+        </select>
+        <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)} className="filter-select">
+          <option value="">All Rarities</option>
+          {RARITY_ORDER.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="filter-select">
+          <option value="number">Sort by Number</option>
+          <option value="holders">Sort by Holders</option>
+        </select>
+      </div>
 
-        {loading?(
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8}}>
-            {Array.from({length:52}).map((_,i)=>(
-              <div key={i} className="skeleton" style={{height:152,animationDelay:`${i*20}ms`}}/>
-            ))}
-          </div>
-        ):view==='grid'?(
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8}}>
-            {filtered.map(sp=>(
-              <Card key={sp.number} sp={sp} holders={holderMap[sp.number]?.length??0}
-                onClick={()=>selectSpecies(sp)}/>
-            ))}
-          </div>
-        ):(
-          /* List view */
-          <div style={{display:'flex',flexDirection:'column',gap:3}}>
-            <div style={{display:'grid',gridTemplateColumns:'40px 80px 1fr 100px 80px 80px 80px',
-              gap:8,padding:'6px 12px',fontFamily:'var(--ff-pixel)',fontSize:9,
-              color:'var(--text3)',letterSpacing:1.5,borderBottom:'2px solid var(--green1)'}}>
-              <span>#</span><span>SPRITE</span><span>NAME</span>
-              <span>ENERGY</span><span>RARITY</span><span>SUPPLY</span><span>HOLDERS</span>
-            </div>
-            {filtered.map(sp=>{
-              const col=EC[sp.energy]||'#7ee832';
-              const rc=RC[sp.rarity]||'#90c880';
-              return (
-                <div key={sp.number} onClick={()=>selectSpecies(sp)}
-                  style={{display:'grid',gridTemplateColumns:'40px 80px 1fr 100px 80px 80px 80px',
-                    gap:8,padding:'6px 12px',alignItems:'center',
-                    cursor:'pointer',border:'1px solid transparent',transition:'all 0.1s',
-                    background:'var(--panel)'}}
-                  onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;
-                    el.style.borderColor=col+'40';el.style.background=`${col}06`;}}
-                  onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;
-                    el.style.borderColor='transparent';el.style.background='var(--panel)';}}>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--text3)'}}>
-                    #{String(sp.number).padStart(3,'0')}
-                  </span>
-                  <Sprite src={sp.png||sp.svg||''} name={sp.name} size={40}/>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text)'}}>{sp.name}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:col}}>{sp.energy}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:rc}}>{sp.rarity}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--bright)'}}>{supplyMap[sp.number]!=null?supplyMap[sp.number]:'—'}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)'}}>
-                    {holderMap[sp.number]?.length||'—'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+      {loading ? (
+        <div style={{textAlign:'center', padding:'40px', fontFamily:'var(--font-press-start)', fontSize:20, color:'var(--lime)'}}>LOADING SPECIES...</div>
+      ) : (
+        <div className="species-grid">
+          {sorted.map(sp => (
+            <Card key={sp.number} sp={sp} holders={holderMap[sp.number]?.length || 0} onClick={() => handleSelect(sp)} />
+          ))}
+        </div>
+      )}
 
-      {selected&&(
-        <DetailModal sp={selected}
+      {selected && (
+        <DetailModal
+          sp={selected}
           holderMap={holderMap}
           supplyMap={supplyMap}
           setHolderMap={setHolderMap}
           descMap={descMap}
           mobile={mobile}
-          allSpecies={species}
-          onClose={closeModal}
-          onNav={navSpecies}/>
+          allSpecies={sorted}
+          onClose={handleClose}
+          onNav={(num) => {
+            const sp = sorted.find(s => s.number === num);
+            if (sp) handleSelect(sp);
+          }}
+        />
       )}
+
+      {confirm && <ConfirmDlg url={confirm} onOk={()=>{window.open(confirm,'_blank');setConfirm(null);}} onNo={()=>setConfirm(null)}/>}
     </div>
   );
 }
 
 export default function LibraryPage() {
-  return <Suspense><LibraryInner/></Suspense>;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LibraryInner />
+    </Suspense>
+  );
 }

@@ -1,0 +1,52 @@
+{
+  "version": 3,
+  "middleware": {},
+  "sortedMiddleware": [],
+  "functions": {
+    "/api/og/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "required-server-files.js",
+        "server/server-reference-manifest.js",
+        "server/app/api/og/route_client-reference-manifest.js",
+        "server/edge/chunks/_next-internal_server_app_api_og_route_actions_2e0ac838.js",
+        "server/edge/chunks/[root-of-the-server]__c05fcdb9._.js",
+        "server/edge/chunks/node_modules_next_dist_4ccdff2c._.js",
+        "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_16be1ace._.js",
+        "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_708967da.js"
+      ],
+      "name": "app/api/og/route",
+      "page": "/api/og/route",
+      "matchers": [
+        {
+          "regexp": "^/api/og(?:/)?$",
+          "originalSource": "/api/og"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_fdb56e4cc5936d29",
+          "filePath": "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_resvg_23ace1ce.wasm"
+        },
+        {
+          "name": "wasm_1ccdc983b1fd9f87",
+          "filePath": "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_yoga_23ace1ce.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf",
+          "filePath": "server/edge/assets/noto-sans-v27-latin-regular.bdfa676c.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "iMjRIXV6YeZaAZWR4MGWq",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "um58faXNjiAvAGLIvdfwCQ6gQKKOkm6UNi/1jgwuFuw=",
+        "__NEXT_PREVIEW_MODE_ID": "07f64e5e21a09a5871fbc3b29a10fc7e",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "7bbb3b431520306d43f1e78683ba7474792e2e4772a3c41002fb4f700a3e305f",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "d7d039634df0ba0eff520a9cbafb33a0f54d2e7804423537be3e8229fa537c52"
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/cron": {
+      "maxDuration": 300
+    },
+    "/api/debug": {
+      "maxDuration": 30
+    },
+    "/api/desc": {
+      "maxDuration": 60
+    },
+    "/api/leaderboard": {
+      "maxDuration": 30
+    },
+    "/api/migrate": {
+      "maxDuration": 30
+    },
+    "/api/og": {},
+    "/api/registry": {
+      "maxDuration": 30
+    },
+    "/api/sales": {
+      "maxDuration": 15
+    },
+    "/api/save": {
+      "maxDuration": 60
+    },
+    "/api/sprite": {
+      "maxDuration": 15
+    },
+    "/api/supply": {
+      "maxDuration": 30
+    },
+    "/api/trigger": {
+      "maxDuration": 800
+    }
+  }
+}

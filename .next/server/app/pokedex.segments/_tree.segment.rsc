@@ -1,3 +1,3 @@
-:HL["/_next/static/chunks/f734889bec3ab8ab.css","style"]
+:HL["/_next/static/chunks/e25a1eb93005fe54.css","style"]
 :HL["https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen:wght@400;700&family=Share+Tech+Mono&display=swap","style"]
-0:{"buildId":"TxMiFK49AHLyyKckJFzl9","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"pokedex","paramType":null,"paramKey":"pokedex","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+0:{"buildId":"0OpLmZgDmeOjlb05uuBgj","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"pokedex","paramType":null,"paramKey":"pokedex","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}

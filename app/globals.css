@@ -690,7 +690,7 @@ body::after {
     aspect-ratio: 1 / 1;
     display: flex;
     min-height: 120px;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .podium-content {
@@ -701,6 +701,7 @@ body::after {
     align-content: center;
     justify-content: center;
     text-align: center;
+    overflow: hidden;
   }
 
   .podium-topline,
@@ -722,7 +723,11 @@ body::after {
 
   .podium-medal-wrap {
     min-height: 52px;
-    overflow: visible;
+    overflow: hidden;
+  }
+
+  .podium-medal-wrap svg {
+    animation-name: podiumEmblemFloatMobile;
   }
 
   .podium-medal-ring {
@@ -749,7 +754,24 @@ body::after {
   .podium-progress-tokens,
   .podium-footer-stat {
     font-size: 6px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.06em;
+  }
+
+  .podium-progress-meta {
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .podium-progress-tokens {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .podium-footer-stat {
+    white-space: nowrap;
   }
 
   .podium-progress-wrap {
@@ -777,6 +799,11 @@ body::after {
 @keyframes podiumEmblemFloat {
   0%, 100% { transform: translate3d(0, 0px, 0) scale(1); }
   50% { transform: translate3d(0, -12px, 0) scale(1.035); }
+}
+
+@keyframes podiumEmblemFloatMobile {
+  0%, 100% { transform: translate3d(0, 0px, 0) scale(1); }
+  50% { transform: translate3d(0, -7px, 0) scale(1.02); }
 }
 
 /* ── Ticker/marquee ── */

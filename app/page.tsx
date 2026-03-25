@@ -968,7 +968,7 @@ export default function CC0Masters() {
                 <div className="podium-header-rule" />
               </div>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:mobile?'1fr 1fr 1fr':'1fr 1.1fr 1fr',gap:mobile?4:8,alignItems:mobile?'stretch':'end',marginBottom:8}}>
+            <div style={{display:'grid',gridTemplateColumns:mobile?'1fr 1fr 1fr':'1fr 1.1fr 1fr',gap:mobile?2:8,alignItems:mobile?'stretch':'end',marginBottom:8}}>
               <>
                 <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address} mobile={mobile}/>
                 <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address} mobile={mobile}/>

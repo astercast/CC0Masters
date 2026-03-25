@@ -453,7 +453,19 @@ body::after {
   display: grid;
   place-items: center;
   min-height: 78px;
-  animation: podiumEmblemFloat 4.8s ease-in-out infinite;
+  animation: podiumEmblemFloat 5.4s ease-in-out infinite;
+}
+
+.podium-card.rank-1 .podium-medal-wrap {
+  animation-delay: 0s;
+}
+
+.podium-card.rank-2 .podium-medal-wrap {
+  animation-delay: 0.45s;
+}
+
+.podium-card.rank-3 .podium-medal-wrap {
+  animation-delay: 0.9s;
 }
 
 .podium-medal-ring {
@@ -465,9 +477,9 @@ body::after {
   opacity: 0.65;
 }
 
-.podium-card.rank-1 .podium-medal-wrap svg { filter: drop-shadow(0 0 18px rgba(255,208,64,0.22)); }
-.podium-card.rank-2 .podium-medal-wrap svg { filter: drop-shadow(0 0 18px rgba(196,220,212,0.18)); }
-.podium-card.rank-3 .podium-medal-wrap svg { filter: drop-shadow(0 0 18px rgba(212,136,64,0.18)); }
+.podium-card.rank-1 .podium-medal-wrap svg { filter: drop-shadow(0 0 10px rgba(255,208,64,0.14)); }
+.podium-card.rank-2 .podium-medal-wrap svg { filter: drop-shadow(0 0 10px rgba(196,220,212,0.12)); }
+.podium-card.rank-3 .podium-medal-wrap svg { filter: drop-shadow(0 0 10px rgba(212,136,64,0.12)); }
 
 .podium-identity {
   padding: 10px 12px;
@@ -752,7 +764,7 @@ body::after {
 
 @keyframes podiumEmblemFloat {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
+  50% { transform: translateY(-9px); }
 }
 
 /* ── Ticker/marquee ── */

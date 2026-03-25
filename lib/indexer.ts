@@ -6,6 +6,13 @@ const CONTRACT    = '0xeeb036dbbd3039429c430657ed9836568da79d5f';
 const TOTAL       = 9999;
 const CONCURRENCY = 40;
 const BLOB_KEY    = 'cc0masters/leaderboard.json';
+// Multiple RPCs — first one that works is used. User-Agent required to avoid 403.
+const ETH_RPCS    = [
+  'https://1rpc.io/eth',
+  'https://ethereum-rpc.publicnode.com',
+  'https://eth.meowrpc.com',
+];
+const RPC_HEADERS = { 'Content-Type': 'application/json', 'User-Agent': 'CC0Masters/1.0' };
 
 function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -19,14 +26,24 @@ async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
   throw new Error(`Failed: ${url}`);
 }
 
+async function ethRpc(method: string, params: unknown[] = []): Promise<unknown> {
+  const body = JSON.stringify({ jsonrpc:'2.0', method, params, id:1 });
+  for (const rpc of ETH_RPCS) {
+    try {
+      const res = await fetch(rpc, { method:'POST', headers:RPC_HEADERS, body,
+        signal: AbortSignal.timeout(10000) });
+      if (!res.ok) continue;
+      const d = await res.json();
+      if (d.error) { console.warn(`[ethRpc] ${rpc} error:`, d.error.message); continue; }
+      return d.result;
+    } catch(e) { console.warn(`[ethRpc] ${rpc} failed:`, String(e).slice(0,80)); }
+  }
+  throw new Error(`All RPCs failed for method: ${method}`);
+}
+
 async function getLatestBlock(): Promise<number> {
-  const res = await fetch('https://eth.llamarpc.com', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc:'2.0', method:'eth_blockNumber', params:[], id:1 }),
-  });
-  const d = await res.json();
-  return parseInt(d.result, 16);
+  const result = await ethRpc('eth_blockNumber') as string;
+  return parseInt(result, 16);
 }
 
 async function getTransferredAddresses(fromBlock: number, toBlock: number): Promise<Set<string>> {
@@ -34,18 +51,10 @@ async function getTransferredAddresses(fromBlock: number, toBlock: number): Prom
   const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
   for (let start = fromBlock; start <= toBlock; start += 2000) {
     const end = Math.min(start + 1999, toBlock);
-    const res = await fetch('https://eth.llamarpc.com', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', method: 'eth_getLogs', id: 1,
-        params: [{ address: CONTRACT, topics: [TRANSFER_TOPIC],
-          fromBlock: '0x' + start.toString(16), toBlock: '0x' + end.toString(16) }],
-      }),
-    });
-    const d = await res.json();
-    if (d.result) {
-      for (const log of d.result) {
+    const logs = await ethRpc('eth_getLogs', [{ address: CONTRACT, topics: [TRANSFER_TOPIC],
+      fromBlock: '0x' + start.toString(16), toBlock: '0x' + end.toString(16) }]) as any[];
+    if (Array.isArray(logs)) {
+      for (const log of logs) {
         if (log.topics[1]) addresses.add('0x' + log.topics[1].slice(26).toLowerCase());
         if (log.topics[2]) addresses.add('0x' + log.topics[2].slice(26).toLowerCase());
       }

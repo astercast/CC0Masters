@@ -1100,12 +1100,12 @@ export default function CC0Masters() {
                   <table className="lb-table" style={{width:'100%'}}>
                     <thead>
                       <tr>
-                        <th style={{textAlign:'center',width:44}}>#</th>
+                        <th style={{textAlign:'center'}}>#</th>
                         <th style={{textAlign:'left'}}>WALLET</th>
-                        <th style={{textAlign:'left',width:'99%'}}>PROGRESS</th>
-                        <th style={{textAlign:'right',whiteSpace:'nowrap'}}>TOKENS</th>
-                        <th style={{textAlign:'center',whiteSpace:'nowrap'}}>ENERGY</th>
-                        <th style={{textAlign:'center',whiteSpace:'nowrap'}}>STATUS</th>
+                        <th style={{textAlign:'left'}}>PROGRESS</th>
+                        <th style={{textAlign:'right'}}>TOKENS</th>
+                        <th style={{textAlign:'center'}}>ENERGY</th>
+                        <th style={{textAlign:'center'}}>STATUS</th>
                       </tr>
                     </thead>
                     <tbody>

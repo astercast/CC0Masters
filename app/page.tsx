@@ -427,7 +427,7 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
 
 function SkeletonRow({ mobile }: { mobile: boolean }) {
   return <tr style={{borderBottom:'1px solid var(--border)'}}>
-    {(mobile?[28,120,48,36,48]:[32,150,60,110,45,42,96,60]).map((w,i)=>(
+    {(mobile?[28,120,48,36,48]:[32,150,120,50,80,60]).map((w,i)=>(
       <td key={i} style={{padding:'12px'}}><div className="skeleton" style={{height:8,width:w}}/></td>
     ))}
   </tr>;
@@ -1018,7 +1018,7 @@ export default function CC0Masters() {
                 </div>
               ):(
                 <table className="lb-table">
-                  <thead><tr>{['#','WALLET','COLLECTED','COMPLETION','TOKENS','ENERGY','STATUS'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+                  <thead><tr>{['#','WALLET','PROGRESS','TOKENS','ENERGY','STATUS'].map(h=><th key={h}>{h}</th>)}</tr></thead>
                   <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={false}/>)}</tbody>
                 </table>
               )}
@@ -1097,29 +1097,15 @@ export default function CC0Masters() {
               ):(
                 /* ── DESKTOP: full table ── */
                 <div style={{overflowX:'auto'}}>
-                  <table className="lb-table" style={{tableLayout:'fixed',width:'100%'}}>
-                    <colgroup>
-                      <col style={{width:52}}/>
-                      <col style={{width:'22%'}}/>
-                      <col style={{width:110}}/>
-                      <col style={{width:'25%',minWidth:200}}/>
-                      <col style={{width:80}}/>
-                      <col style={{width:110}}/>
-                      <col style={{width:100}}/>
-                    </colgroup>
+                  <table className="lb-table" style={{width:'100%'}}>
                     <thead>
                       <tr>
-                        {[
-                          { label:'#', align:'center' as const },
-                          { label:'WALLET', align:'left' as const },
-                          { label:'COLLECTED', align:'center' as const },
-                          { label:'COMPLETION', align:'left' as const },
-                          { label:'TOKENS', align:'center' as const },
-                          { label:'ENERGY', align:'center' as const },
-                          { label:'STATUS', align:'center' as const },
-                        ].map(({label,align})=>(
-                          <th key={label} className="lb-th" style={{textAlign:align}}>{label}</th>
-                        ))}
+                        <th className="lb-th" style={{textAlign:'center',width:36,padding:'12px 6px'}}>#</th>
+                        <th className="lb-th" style={{textAlign:'left',padding:'12px 10px'}}>WALLET</th>
+                        <th className="lb-th" style={{textAlign:'left',padding:'12px 10px'}}>PROGRESS</th>
+                        <th className="lb-th" style={{textAlign:'center',width:60,padding:'12px 6px'}}>TOKENS</th>
+                        <th className="lb-th" style={{textAlign:'center',width:90,padding:'12px 6px'}}>ENERGY</th>
+                        <th className="lb-th" style={{textAlign:'center',width:80,padding:'12px 6px'}}>STATUS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1140,61 +1126,54 @@ export default function CC0Masters() {
                                 :i===2?`linear-gradient(90deg,rgba(200,112,48,0.04) 0%,transparent 60%)`
                                 :isOpen?'rgba(124,232,50,0.03)':'',
                             }}>
-                            <td style={{textAlign:'center',padding:'12px 8px'}}>
+                            <td style={{textAlign:'center',padding:'10px 6px',width:36}}>
                               <span style={{
                                 fontFamily:'var(--ff-pixel)',
-                                fontSize:i<3?15:12,
+                                fontSize:i<3?14:11,
                                 color:rankColor,
-                                textShadow:i<3?`0 0 8px ${rankColor}60`:'none',
                               }}>{i+1}</span>
                             </td>
-                            <td style={{padding:'12px 10px',overflow:'hidden'}}><AddressDisplay address={entry.address}/></td>
-                            <td style={{textAlign:'center',padding:'12px 10px',whiteSpace:'nowrap'}}>
-                              <span style={{
-                                fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
-                                letterSpacing:'-0.5px',
-                              }}>{entry.collected}</span>
-                              <span style={{
-                                fontFamily:'var(--ff-pixel)',fontSize:9,
-                                color:'var(--text3)',marginLeft:3,
-                              }}>/{TOTAL_SPECIES}</span>
-                            </td>
-                            <td style={{padding:'12px 14px'}}>
+                            <td style={{padding:'10px 10px'}}><AddressDisplay address={entry.address}/></td>
+                            <td style={{padding:'10px 10px'}}>
                               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                <div style={{flex:1,minWidth:0}}>
+                                <span style={{
+                                  fontFamily:'var(--ff-pixel)',fontSize:i<3?17:13,color:rankColor,
+                                  minWidth:46,flexShrink:0,
+                                }}>{entry.collected}<span style={{fontSize:9,color:'var(--text3)',marginLeft:2}}>/{TOTAL_SPECIES}</span></span>
+                                <div style={{flex:1,minWidth:60,maxWidth:160}}>
                                   <ProgressBar pct={pct} variant={pv} height={5}/>
                                 </div>
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:11,
+                                  fontFamily:'var(--ff-pixel)',fontSize:10,
                                   color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text2)',
-                                  minWidth:40,textAlign:'right',flexShrink:0,
+                                  flexShrink:0,
                                 }}>{entry.progress}</span>
                               </div>
                             </td>
-                            <td style={{textAlign:'center',padding:'12px 8px'}}><span style={{fontFamily:'var(--ff-mono)',fontSize:13,color:'var(--text2)'}}>  {entry.totalTokensHeld.toLocaleString()}</span></td>
-                            <td style={{textAlign:'center',padding:'12px 8px'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
-                            <td style={{textAlign:'center',padding:'12px 8px'}}>
+                            <td style={{textAlign:'center',padding:'10px 6px'}}><span style={{fontFamily:'var(--ff-mono)',fontSize:12,color:'var(--text2)'}}>{entry.totalTokensHeld.toLocaleString()}</span></td>
+                            <td style={{textAlign:'center',padding:'10px 4px'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
+                            <td style={{textAlign:'center',padding:'10px 6px'}}>
                               {entry.missing===0?(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1.5,
+                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1,
                                   color:'var(--lime)',
                                   border:'1px solid var(--green2)',
                                   background:'rgba(124,232,50,0.08)',
-                                  padding:'3px 8px',
+                                  padding:'2px 6px',
                                   whiteSpace:'nowrap',display:'inline-block',
-                                }}>✓ COMPLETE</span>
+                                }}>✓ FULL</span>
                               ):(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:11,
+                                  fontFamily:'var(--ff-pixel)',fontSize:10,
                                   color:entry.missing<5?'var(--amber)':entry.missing<30?'var(--text)':'var(--text2)',
                                   whiteSpace:'nowrap',
                                 }}>
-                                  <span style={{opacity:0.4,marginRight:3}}>−</span>{entry.missing}
+                                  −{entry.missing}
                                 </span>
                               )}
                             </td>
                           </tr>,
-                          isOpen&&<tr key={`${entry.address}-d`}><td colSpan={7} style={{padding:0}}>
+                          isOpen&&<tr key={`${entry.address}-d`}><td colSpan={6} style={{padding:0}}>
                             <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
                           </td></tr>,
                         ];

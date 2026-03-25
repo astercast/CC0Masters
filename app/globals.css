@@ -216,30 +216,17 @@ body::after {
 /* ── Table ── */
 .lb-table { width: 100%; border-collapse: collapse; }
 .lb-table th, .lb-th {
-  padding: 14px 14px;
+  padding: 10px 10px;
   font-family: var(--ff-pixel);
   font-size: 10px;
   color: var(--text2);
-  text-align: left;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   border-bottom: 2px solid var(--green1);
   border-right: none;
   background: var(--bg3);
   text-transform: uppercase;
   white-space: nowrap;
-  position: relative;
 }
-.lb-table thead tr {
-  background: linear-gradient(180deg, var(--panel2) 0%, var(--bg3) 100%);
-}
-.lb-table th::after {
-  content: '';
-  position: absolute;
-  right: 0; top: 25%; bottom: 25%;
-  width: 1px;
-  background: var(--border);
-}
-.lb-table th:last-child::after { display: none; }
 .lb-row {
   border-bottom: 1px solid rgba(30,58,26,0.5);
   cursor: pointer;

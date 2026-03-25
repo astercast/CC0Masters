@@ -906,7 +906,7 @@ export default function CC0Masters() {
           <div style={{marginLeft:mobile?0:'auto',width:mobile?'100%':undefined,display:'flex',gap:8,alignItems:'center',animation:'fadeUp 0.5s ease 150ms both',flexWrap:'wrap'}}>
             <button className="btn" onClick={()=>router.push('/library')} style={{letterSpacing:1,fontSize:mobile?10:undefined}}>📖 {mobile?'LIBRARY':'CC0MON LIBRARY'}</button>
             <button className="btn btn-primary" onClick={fetchLeaderboard} disabled={scanning||loading}
-              style={{position:'relative',overflow:'hidden'}}>
+              style={{position:'relative',overflow:'hidden',fontSize:mobile?9:11,padding:mobile?'6px 10px':'7px 12px',letterSpacing:1}}>
               {loading?'↺ LOADING…':'↺ REFRESH'}
             </button>
           </div>

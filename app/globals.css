@@ -215,51 +215,61 @@ body::after {
 
 /* ── Table ── */
 .lb-table { width: 100%; border-collapse: collapse; }
-.lb-table th {
-  padding: 12px 16px;
+.lb-table th, .lb-th {
+  padding: 14px 14px;
   font-family: var(--ff-pixel);
   font-size: 10px;
   color: var(--text2);
   text-align: left;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.25em;
   border-bottom: 2px solid var(--green1);
   border-right: none;
-  background: linear-gradient(180deg, rgba(30,58,26,0.15) 0%, transparent 100%);
+  background: var(--bg3);
   text-transform: uppercase;
   white-space: nowrap;
-  text-shadow: 0 0 8px rgba(124,232,50,0.15);
-  padding-top: 14px;
-  padding-bottom: 14px;
+  position: relative;
 }
+.lb-table thead tr {
+  background: linear-gradient(180deg, var(--panel2) 0%, var(--bg3) 100%);
+}
+.lb-table th::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 25%; bottom: 25%;
+  width: 1px;
+  background: var(--border);
+}
+.lb-table th:last-child::after { display: none; }
 .lb-row {
   border-bottom: 1px solid rgba(30,58,26,0.5);
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
   position: relative;
 }
 .lb-row:hover {
-  background: linear-gradient(90deg, rgba(124,232,50,0.05) 0%, rgba(124,232,50,0.02) 40%, transparent 100%) !important;
-  box-shadow: inset 0 0 40px rgba(124,232,50,0.015);
+  background: rgba(124,232,50,0.04) !important;
 }
 .lb-row.open {
-  background: linear-gradient(90deg, rgba(124,232,50,0.06) 0%, rgba(124,232,50,0.03) 50%, transparent 100%) !important;
+  background: rgba(124,232,50,0.06) !important;
   border-bottom-color: var(--green2);
-  box-shadow: inset 0 0 60px rgba(124,232,50,0.02);
 }
 .lb-row td {
-  padding: 14px 16px;
+  padding: 12px 14px;
   vertical-align: middle;
   border-right: none;
 }
-/* Subtle left-border hover sweep */
+.lb-row:nth-child(even) {
+  background: rgba(10,18,9,0.4);
+}
+/* Left-border accent on hover */
 .lb-row::before {
   content: '';
   position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: linear-gradient(180deg, transparent 10%, var(--lime) 50%, transparent 90%);
+  background: var(--lime);
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.2s ease;
 }
-.lb-row:hover::before { opacity: 0.6; }
+.lb-row:hover::before { opacity: 0.5; }
 
 /* ── Detail panel ── */
 .detail-panel {
@@ -293,90 +303,72 @@ body::after {
 
 /* ── Podium cards ── */
 .podium-card {
-  background: linear-gradient(168deg, var(--panel2) 0%, var(--panel) 40%, var(--bg3) 100%);
+  background: linear-gradient(180deg, var(--panel2) 0%, var(--panel) 50%, var(--bg3) 100%);
   border: 2px solid var(--green1);
-  padding: 22px 18px 18px;
+  padding: 20px 16px 16px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease, border-color 0.2s ease;
   box-shadow:
     3px 3px 0 var(--green0),
-    0 8px 24px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(124,232,50,0.06),
-    inset 0 0 30px rgba(0,0,0,0.4);
+    0 4px 16px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.03);
 }
 .podium-card:hover {
-  transform: translateY(-6px) scale(1.02);
+  transform: translateY(-4px);
   box-shadow:
     0 3px 0 var(--green0),
-    0 16px 40px rgba(0,0,0,0.6),
-    0 0 24px rgba(124,232,50,0.08),
-    inset 0 1px 0 rgba(124,232,50,0.1),
-    inset 0 0 30px rgba(0,0,0,0.3);
+    0 12px 32px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.05);
 }
 .podium-card.rank-1 {
   border-color: var(--gold);
-  background: linear-gradient(168deg, rgba(255,208,64,0.06) 0%, var(--panel) 35%, var(--bg3) 100%);
+  background: linear-gradient(180deg, rgba(255,208,64,0.08) 0%, var(--panel) 40%, var(--bg3) 100%);
   box-shadow:
     3px 3px 0 #6b5000,
-    0 8px 32px rgba(255,208,64,0.12),
-    0 0 60px rgba(255,208,64,0.06),
-    inset 0 1px 0 rgba(255,208,64,0.12),
-    inset 0 0 40px rgba(0,0,0,0.35);
+    0 4px 20px rgba(255,208,64,0.1),
+    inset 0 1px 0 rgba(255,208,64,0.1);
 }
 .podium-card.rank-1:hover {
   box-shadow:
     0 3px 0 #6b5000,
-    0 20px 48px rgba(255,208,64,0.18),
-    0 0 80px rgba(255,208,64,0.08),
-    inset 0 1px 0 rgba(255,208,64,0.18),
-    inset 0 0 40px rgba(0,0,0,0.25);
+    0 16px 40px rgba(255,208,64,0.15),
+    inset 0 1px 0 rgba(255,208,64,0.15);
 }
 .podium-card.rank-2 {
   border-color: var(--silver);
-  background: linear-gradient(168deg, rgba(144,184,160,0.04) 0%, var(--panel) 35%, var(--bg3) 100%);
+  background: linear-gradient(180deg, rgba(144,184,160,0.06) 0%, var(--panel) 40%, var(--bg3) 100%);
   box-shadow:
     3px 3px 0 #305040,
-    0 8px 24px rgba(144,184,160,0.08),
-    0 0 40px rgba(144,184,160,0.04),
-    inset 0 1px 0 rgba(144,184,160,0.08),
-    inset 0 0 30px rgba(0,0,0,0.4);
+    0 4px 16px rgba(144,184,160,0.06),
+    inset 0 1px 0 rgba(144,184,160,0.06);
 }
 .podium-card.rank-2:hover {
   box-shadow:
     0 3px 0 #305040,
-    0 16px 40px rgba(144,184,160,0.12),
-    0 0 50px rgba(144,184,160,0.06),
-    inset 0 1px 0 rgba(144,184,160,0.12),
-    inset 0 0 30px rgba(0,0,0,0.3);
+    0 12px 32px rgba(144,184,160,0.1),
+    inset 0 1px 0 rgba(144,184,160,0.1);
 }
 .podium-card.rank-3 {
   border-color: var(--bronze);
-  background: linear-gradient(168deg, rgba(200,112,48,0.04) 0%, var(--panel) 35%, var(--bg3) 100%);
+  background: linear-gradient(180deg, rgba(200,112,48,0.06) 0%, var(--panel) 40%, var(--bg3) 100%);
   box-shadow:
     3px 3px 0 #6b2800,
-    0 8px 24px rgba(200,112,48,0.08),
-    0 0 40px rgba(200,112,48,0.04),
-    inset 0 1px 0 rgba(200,112,48,0.08),
-    inset 0 0 30px rgba(0,0,0,0.4);
+    0 4px 16px rgba(200,112,48,0.06),
+    inset 0 1px 0 rgba(200,112,48,0.06);
 }
 .podium-card.rank-3:hover {
   box-shadow:
     0 3px 0 #6b2800,
-    0 16px 40px rgba(200,112,48,0.12),
-    0 0 50px rgba(200,112,48,0.06),
-    inset 0 1px 0 rgba(200,112,48,0.12),
-    inset 0 0 30px rgba(0,0,0,0.3);
+    0 12px 32px rgba(200,112,48,0.1),
+    inset 0 1px 0 rgba(200,112,48,0.1);
 }
 .podium-card.open {
   border-color: var(--lime) !important;
   box-shadow:
     0 3px 0 var(--green2),
-    0 12px 32px rgba(124,232,50,0.12),
-    0 0 24px rgba(124,232,50,0.08),
-    inset 0 1px 0 rgba(124,232,50,0.1),
-    inset 0 0 20px rgba(0,0,0,0.3) !important;
+    0 8px 24px rgba(124,232,50,0.1) !important;
 }
 
 /* Scanline effect on podium cards */

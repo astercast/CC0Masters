@@ -336,63 +336,89 @@ function SpriteParade({ images }: { images: Record<string,{svg:string;png:string
   );
 }
 
+/* ── SVG Medal Icons ── */
+function MedalIcon({ rank, size=48 }: { rank:1|2|3; size?:number }) {
+  const colors = {
+    1: { main:'#ffd040', dark:'#c8a020', light:'#fff4b0', rim:'#e8b830', ribbon1:'#ff4444', ribbon2:'#cc2222' },
+    2: { main:'#c0d8cc', dark:'#8aa098', light:'#e8f4ec', rim:'#a0c0b0', ribbon1:'#4488ff', ribbon2:'#2266cc' },
+    3: { main:'#d48840', dark:'#a06020', light:'#f0c080', rim:'#c07030', ribbon1:'#44aa44', ribbon2:'#228822' },
+  };
+  const c = colors[rank];
+  const numStr = rank === 1 ? '1' : rank === 2 ? '2' : '3';
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display:'block'}}>
+      {/* Ribbon tails */}
+      <path d="M22 38L16 58L24 52L28 60L30 42Z" fill={c.ribbon1} opacity="0.9"/>
+      <path d="M42 38L48 58L40 52L36 60L34 42Z" fill={c.ribbon2} opacity="0.9"/>
+      {/* Medal body - outer rim */}
+      <circle cx="32" cy="28" r="22" fill={c.dark}/>
+      {/* Medal body - main */}
+      <circle cx="32" cy="28" r="19" fill={c.main}/>
+      {/* Inner ring */}
+      <circle cx="32" cy="28" r="15" fill="none" stroke={c.dark} strokeWidth="1.5" opacity="0.5"/>
+      {/* Highlight */}
+      <ellipse cx="28" cy="22" rx="8" ry="6" fill={c.light} opacity="0.35"/>
+      {/* Number */}
+      <text x="32" y="34" textAnchor="middle" fontFamily="var(--ff-pixel)" fontSize="18" fontWeight="bold" fill={c.dark}>{numStr}</text>
+      {/* Star accent */}
+      {rank===1 && <path d="M32 10L34 16L40 16L35 20L37 26L32 22L27 26L29 20L24 16L30 16Z" fill={c.light} opacity="0.3"/>}
+    </svg>
+  );
+}
+
 function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean }) {
-  const MEDALS = {1:'🥇',2:'🥈',3:'🥉'};
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
   const VARIANTS = {1:'gold' as const,2:'silver' as const,3:'bronze' as const};
-  const foilClass = rank===1?' rank1-foil':'';
 
   return (
-    <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}${foilClass}`}
+    <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}`}
       style={{animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`}}>
-      {/* ambient glow background */}
-      <div style={{position:'absolute',inset:0,
-        background:`radial-gradient(ellipse at 50% 0%,${COLORS[rank]}12 0%,transparent 65%)`,
-        pointerEvents:'none',zIndex:0}}/>
+      {/* top accent stripe */}
+      <div style={{position:'absolute',top:0,left:0,right:0,height:3,
+        background:`linear-gradient(90deg,transparent,${COLORS[rank]},transparent)`,zIndex:3}}/>
       {/* corner decorations */}
-      <div style={{position:'absolute',top:5,left:5,width:10,height:10,borderTop:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
-      <div style={{position:'absolute',top:5,right:5,width:10,height:10,borderTop:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
-      <div style={{position:'absolute',bottom:5,left:5,width:10,height:10,borderBottom:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
-      <div style={{position:'absolute',bottom:5,right:5,width:10,height:10,borderBottom:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.8,zIndex:2}}/>
+      <div style={{position:'absolute',top:6,left:6,width:12,height:12,borderTop:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
+      <div style={{position:'absolute',top:6,right:6,width:12,height:12,borderTop:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
+      <div style={{position:'absolute',bottom:6,left:6,width:12,height:12,borderBottom:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
+      <div style={{position:'absolute',bottom:6,right:6,width:12,height:12,borderBottom:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
 
-      <div style={{position:'relative',zIndex:2,textAlign:'center',padding:'4px 0'}}>
+      <div className="podium-content" style={{position:'relative',zIndex:2,textAlign:'center',padding:mobile?'6px 0 4px':'8px 0 4px'}}>
         {/* rank label */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:11,color:COLORS[rank],letterSpacing:mobile?1:3,marginBottom:mobile?5:10,
-          textShadow:`0 0 8px ${COLORS[rank]}80`}}>{LABELS[rank]}</div>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:10,color:COLORS[rank],letterSpacing:mobile?1:4,marginBottom:mobile?4:8,
+          textTransform:'uppercase',opacity:0.9}}>{LABELS[rank]}</div>
 
-        {/* medal */}
-        <div style={{fontSize:mobile?(rank===1?28:20):rank===1?48:32,animation:'float 3.5s ease-in-out infinite',lineHeight:1,marginBottom:mobile?6:12,
-          filter:`drop-shadow(0 0 12px ${COLORS[rank]}80) drop-shadow(0 4px 8px rgba(0,0,0,0.5))`}}>{MEDALS[rank]}</div>
+        {/* SVG medal */}
+        <div style={{display:'flex',justifyContent:'center',marginBottom:mobile?6:10}}>
+          <MedalIcon rank={rank} size={mobile?(rank===1?36:28):(rank===1?56:42)}/>
+        </div>
 
         {/* address */}
-        {!mobile&&<div style={{marginBottom:12,minHeight:20,padding:'6px 8px',
-          background:`linear-gradient(90deg,transparent,${COLORS[rank]}08,transparent)`,
-          borderTop:`1px solid ${COLORS[rank]}20`,borderBottom:`1px solid ${COLORS[rank]}20`}}>
+        {!mobile&&<div style={{marginBottom:10,minHeight:20,padding:'6px 10px',
+          background:'var(--bg)',border:`1px solid ${COLORS[rank]}15`}}>
           <AddressDisplay address={entry.address}/>
         </div>}
-        {mobile&&<div style={{marginBottom:mobile?6:12,minHeight:16,fontFamily:'var(--ff-mono)',
+        {mobile&&<div style={{marginBottom:6,minHeight:16,fontFamily:'var(--ff-mono)',
           fontSize:8,color:'var(--text2)',textAlign:'center',overflow:'hidden',
           textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 4px'}}>
           {entry.address.slice(0,6)}…{entry.address.slice(-4)}
         </div>}
 
         {/* big number */}
-        <div className={rank===1?'rank-1-num':''} style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?(rank===1?20:16):rank===1?42:28,color:COLORS[rank],
-          textShadow:`0 0 16px ${COLORS[rank]}, 0 0 32px ${COLORS[rank]}60, 0 0 48px ${COLORS[rank]}30`,
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?(rank===1?20:16):rank===1?40:26,color:COLORS[rank],
           lineHeight:1,marginBottom:2,letterSpacing:-1}}>
           {entry.collected}
-          <span style={{fontSize:mobile?9:rank===1?16:13,color:'var(--text3)',marginLeft:mobile?2:5}}>/{TOTAL_SPECIES}</span>
+          <span style={{fontSize:mobile?9:rank===1?15:12,color:'var(--text3)',marginLeft:mobile?2:4}}>/{TOTAL_SPECIES}</span>
         </div>
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:11,color:'var(--text3)',letterSpacing:mobile?1:2,marginBottom:mobile?6:12}}>SPECIES</div>
+        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:9,color:'var(--text3)',letterSpacing:mobile?1:2,marginBottom:mobile?6:10}}>COLLECTED</div>
 
-        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={mobile?3:rank===1?8:6}/>
+        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={mobile?3:rank===1?7:5}/>
 
-        <div style={{marginTop:mobile?5:10,fontFamily:'var(--ff-pixel)',fontSize:mobile?7:11,letterSpacing:1,
-          display:'flex',justifyContent:'center',gap:mobile?5:10}}>
-          <span style={{color:COLORS[rank],textShadow:`0 0 6px ${COLORS[rank]}60`}}>{entry.progress}</span>
-          <span style={{color:'var(--border2)'}}>·</span>
-          <span style={{color:'var(--text3)'}}>{entry.totalTokensHeld} TOKENS</span>
+        <div style={{marginTop:mobile?5:8,fontFamily:'var(--ff-pixel)',fontSize:mobile?7:10,letterSpacing:1,
+          display:'flex',justifyContent:'center',gap:mobile?5:10,alignItems:'center'}}>
+          <span style={{color:COLORS[rank]}}>{entry.progress}</span>
+          <span style={{color:'var(--border2)',fontSize:6}}>●</span>
+          <span style={{color:'var(--text3)'}}>{entry.totalTokensHeld} TKN</span>
         </div>
       </div>
     </div>
@@ -906,14 +932,16 @@ export default function CC0Masters() {
         {/* PODIUM */}
         {!loading&&!error&&sorted.length>=3&&(
           <section style={{marginBottom:24}}>
-            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--lime)',letterSpacing:3,
-                textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
-                <span style={{color:'var(--green2)',fontSize:12}}>▶</span> CHAMPION PODIUM
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--bright)',letterSpacing:3,
+                background:'var(--bg3)',border:'2px solid var(--green1)',padding:'6px 14px',
+                display:'flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
+                <span style={{color:'var(--green2)',fontSize:10}}>◆</span> CHAMPION PODIUM
               </div>
-              <div style={{flex:1,height:1,background:'linear-gradient(90deg,var(--green1),transparent)'}}/>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text3)',letterSpacing:1}}>
-                {(data?.leaders?.length??0).toLocaleString()} TOTAL COLLECTORS
+              <div style={{flex:1,height:2,background:'repeating-linear-gradient(90deg,var(--green1) 0,var(--green1) 4px,transparent 4px,transparent 8px)'}}/>
+              <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',letterSpacing:1,
+                background:'var(--bg)',border:'1px solid var(--border)',padding:'4px 10px'}}>
+                {(data?.leaders?.length??0).toLocaleString()} COLLECTORS
               </div>
             </div>
             <div style={{display:'grid',gridTemplateColumns:mobile?'1fr 1fr 1fr':'1fr 1.1fr 1fr',gap:mobile?4:8,alignItems:'end',marginBottom:8}}>
@@ -964,12 +992,13 @@ export default function CC0Masters() {
 
         {/* RANKINGS TABLE */}
         <div ref={rankingsRef}>
-          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:13,color:'var(--lime)',letterSpacing:3,
-              textShadow:'0 0 12px rgba(124,232,50,0.5)',display:'flex',alignItems:'center',gap:8}}>
-              <span style={{color:'var(--green2)',fontSize:12}}>▶</span> FULL RANKINGS
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+            <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--bright)',letterSpacing:3,
+              background:'var(--bg3)',border:'2px solid var(--green1)',padding:'6px 14px',
+              display:'flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
+              <span style={{color:'var(--green2)',fontSize:10}}>◆</span> FULL RANKINGS
             </div>
-            <div style={{flex:1,height:1,background:'linear-gradient(90deg,var(--green1),transparent)'}}/>
+            <div style={{flex:1,height:2,background:'repeating-linear-gradient(90deg,var(--green1) 0,var(--green1) 4px,transparent 4px,transparent 8px)'}}/>
           </div>
 
           {loading?(
@@ -1068,30 +1097,28 @@ export default function CC0Masters() {
               ):(
                 /* ── DESKTOP: full table ── */
                 <div style={{overflowX:'auto'}}>
-                  <table className="lb-table">
+                  <table className="lb-table" style={{tableLayout:'fixed',width:'100%'}}>
+                    <colgroup>
+                      <col style={{width:52}}/>
+                      <col style={{width:'22%'}}/>
+                      <col style={{width:110}}/>
+                      <col style={{width:'25%',minWidth:200}}/>
+                      <col style={{width:80}}/>
+                      <col style={{width:110}}/>
+                      <col style={{width:100}}/>
+                    </colgroup>
                     <thead>
-                      <tr style={{background:'linear-gradient(90deg,var(--bg) 0%,var(--bg2) 100%)'}}>
+                      <tr>
                         {[
-                          ['#', 'w-12 text-center'],
-                          ['WALLET', ''],
-                          ['COLLECTED', ''],
-                          ['COMPLETION', 'min-w-[180px]'],
-                          ['TOKENS', ''],
-                          ['ENERGY', ''],
-                          ['STATUS', ''],
-                        ].map(([h])=>(
-                          <th key={h as string} style={{
-                            borderRight:'none',
-                            borderBottom:'2px solid var(--green1)',
-                            letterSpacing:2,
-                            padding:'12px 16px',
-                            fontFamily:'var(--ff-pixel)',
-                            fontSize:10,
-                            color:'var(--text3)',
-                            background:'transparent',
-                            textAlign:'left',
-                            whiteSpace:'nowrap',
-                          }}>{h as string}</th>
+                          { label:'#', align:'center' as const },
+                          { label:'WALLET', align:'left' as const },
+                          { label:'COLLECTED', align:'center' as const },
+                          { label:'COMPLETION', align:'left' as const },
+                          { label:'TOKENS', align:'center' as const },
+                          { label:'ENERGY', align:'center' as const },
+                          { label:'STATUS', align:'center' as const },
+                        ].map(({label,align})=>(
+                          <th key={label} className="lb-th" style={{textAlign:align}}>{label}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1113,52 +1140,48 @@ export default function CC0Masters() {
                                 :i===2?`linear-gradient(90deg,rgba(200,112,48,0.04) 0%,transparent 60%)`
                                 :isOpen?'rgba(124,232,50,0.03)':'',
                             }}>
-                            <td style={{width:52,textAlign:'center',padding:'0 10px'}}>
+                            <td style={{textAlign:'center',padding:'12px 8px'}}>
                               <span style={{
                                 fontFamily:'var(--ff-pixel)',
-                                fontSize:i<3?16:12,
+                                fontSize:i<3?15:12,
                                 color:rankColor,
-                                textShadow:i<3?`0 0 12px ${rankColor}90`:'none',
-                                letterSpacing:0.5,
+                                textShadow:i<3?`0 0 8px ${rankColor}60`:'none',
                               }}>{i+1}</span>
                             </td>
-                            <td><AddressDisplay address={entry.address}/></td>
-                            <td style={{padding:'14px 20px',whiteSpace:'nowrap'}}>
+                            <td style={{padding:'12px 10px',overflow:'hidden'}}><AddressDisplay address={entry.address}/></td>
+                            <td style={{textAlign:'center',padding:'12px 10px',whiteSpace:'nowrap'}}>
                               <span style={{
-                                fontFamily:'var(--ff-pixel)',fontSize:i<3?22:16,color:rankColor,
-                                textShadow:i<3?`0 0 10px ${rankColor}70`:'none',
+                                fontFamily:'var(--ff-pixel)',fontSize:i<3?20:15,color:rankColor,
                                 letterSpacing:'-0.5px',
                               }}>{entry.collected}</span>
                               <span style={{
-                                fontFamily:'var(--ff-pixel)',fontSize:10,
-                                color:'var(--text3)',marginLeft:4,
-                              }}>/ {TOTAL_SPECIES}</span>
+                                fontFamily:'var(--ff-pixel)',fontSize:9,
+                                color:'var(--text3)',marginLeft:3,
+                              }}>/{TOTAL_SPECIES}</span>
                             </td>
-                            <td style={{minWidth:180,padding:'14px 16px'}}>
-                              <div style={{display:'flex',alignItems:'center',gap:10}}>
-                                <div style={{flex:1}}>
-                                  <ProgressBar pct={pct} variant={pv} height={6}/>
+                            <td style={{padding:'12px 14px'}}>
+                              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <ProgressBar pct={pct} variant={pv} height={5}/>
                                 </div>
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:12,
+                                  fontFamily:'var(--ff-pixel)',fontSize:11,
                                   color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text2)',
-                                  textShadow:pct>=100?'0 0 10px var(--lime)':pct>80?'0 0 8px rgba(168,255,64,0.4)':'none',
-                                  minWidth:44,textAlign:'right',
+                                  minWidth:40,textAlign:'right',flexShrink:0,
                                 }}>{entry.progress}</span>
                               </div>
                             </td>
-                            <td style={{padding:'14px 16px'}}><span style={{fontFamily:'var(--ff-mono)',fontSize:14,color:'var(--text2)',letterSpacing:0.5}}>{entry.totalTokensHeld.toLocaleString()}</span></td>
-                            <td style={{padding:'14px 16px'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
-                            <td style={{padding:'14px 16px'}}>
+                            <td style={{textAlign:'center',padding:'12px 8px'}}><span style={{fontFamily:'var(--ff-mono)',fontSize:13,color:'var(--text2)'}}>  {entry.totalTokensHeld.toLocaleString()}</span></td>
+                            <td style={{textAlign:'center',padding:'12px 8px'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
+                            <td style={{textAlign:'center',padding:'12px 8px'}}>
                               {entry.missing===0?(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:10,letterSpacing:1.5,
+                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1.5,
                                   color:'var(--lime)',
                                   border:'1px solid var(--green2)',
                                   background:'rgba(124,232,50,0.08)',
                                   padding:'3px 8px',
-                                  boxShadow:'0 0 8px rgba(124,232,50,0.15)',
-                                  whiteSpace:'nowrap',
+                                  whiteSpace:'nowrap',display:'inline-block',
                                 }}>✓ COMPLETE</span>
                               ):(
                                 <span style={{

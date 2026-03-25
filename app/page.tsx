@@ -383,7 +383,6 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
       <div className="podium-content" style={{position:'relative',zIndex:2,padding:mobile?'10px':'16px'}}>
         <div className="podium-topline">
           <span className="podium-rank-chip" style={{color:COLORS[rank],borderColor:`${COLORS[rank]}55`}}>{LABELS[rank]}</span>
-          <span className="podium-rank-index" style={{color:COLORS[rank]}}>0{rank}</span>
         </div>
 
         <div className="podium-medal-wrap">

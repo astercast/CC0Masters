@@ -326,36 +326,36 @@ body::after {
 .podium-card.rank-1 {
   border-color: rgba(255,208,64,0.42);
   background:
-    radial-gradient(circle at top center, rgba(255,208,64,0.26) 0%, rgba(255,208,64,0.08) 36%, rgba(255,208,64,0) 64%),
-    linear-gradient(180deg, rgba(42,32,14,0.98) 0%, rgba(18,15,8,0.98) 100%);
+    radial-gradient(circle at top center, rgba(124,232,50,0.22) 0%, rgba(124,232,50,0.07) 36%, rgba(124,232,50,0) 64%),
+    linear-gradient(180deg, rgba(28,42,20,0.98) 0%, rgba(12,19,10,0.98) 100%);
 }
 .podium-card.rank-1:hover {
   box-shadow:
-    0 18px 48px rgba(255,208,64,0.2),
+    0 18px 48px rgba(124,232,50,0.14),
     0 16px 36px rgba(0,0,0,0.28),
     inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .podium-card.rank-2 {
   border-color: rgba(196,220,212,0.34);
   background:
-    radial-gradient(circle at top center, rgba(196,220,212,0.18) 0%, rgba(196,220,212,0.06) 32%, rgba(196,220,212,0) 62%),
-    linear-gradient(180deg, rgba(25,31,29,0.98) 0%, rgba(12,16,15,0.98) 100%);
+    radial-gradient(circle at top center, rgba(102,182,92,0.2) 0%, rgba(102,182,92,0.06) 32%, rgba(102,182,92,0) 62%),
+    linear-gradient(180deg, rgba(24,36,24,0.98) 0%, rgba(11,17,11,0.98) 100%);
 }
 .podium-card.rank-2:hover {
   box-shadow:
-    0 18px 42px rgba(196,220,212,0.12),
+    0 18px 42px rgba(102,182,92,0.12),
     0 14px 32px rgba(0,0,0,0.28),
     inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .podium-card.rank-3 {
   border-color: rgba(212,136,64,0.34);
   background:
-    radial-gradient(circle at top center, rgba(212,136,64,0.18) 0%, rgba(212,136,64,0.06) 30%, rgba(212,136,64,0) 60%),
-    linear-gradient(180deg, rgba(34,24,16,0.98) 0%, rgba(16,11,9,0.98) 100%);
+    radial-gradient(circle at top center, rgba(72,138,66,0.22) 0%, rgba(72,138,66,0.07) 30%, rgba(72,138,66,0) 60%),
+    linear-gradient(180deg, rgba(20,31,18,0.98) 0%, rgba(10,15,9,0.98) 100%);
 }
 .podium-card.rank-3:hover {
   box-shadow:
-    0 18px 42px rgba(212,136,64,0.12),
+    0 18px 42px rgba(72,138,66,0.12),
     0 14px 32px rgba(0,0,0,0.28),
     inset 0 1px 0 rgba(255,255,255,0.1);
 }
@@ -413,9 +413,9 @@ body::after {
   animation: podiumHaloPulse 3.6s ease-in-out infinite;
 }
 
-.podium-card.rank-1 .podium-halo { background: radial-gradient(circle, rgba(255,208,64,0.28) 0%, rgba(255,208,64,0) 70%); }
-.podium-card.rank-2 .podium-halo { background: radial-gradient(circle, rgba(196,220,212,0.2) 0%, rgba(196,220,212,0) 70%); }
-.podium-card.rank-3 .podium-halo { background: radial-gradient(circle, rgba(212,136,64,0.2) 0%, rgba(212,136,64,0) 70%); }
+.podium-card.rank-1 .podium-halo { background: radial-gradient(circle, rgba(124,232,50,0.22) 0%, rgba(124,232,50,0) 70%); }
+.podium-card.rank-2 .podium-halo { background: radial-gradient(circle, rgba(102,182,92,0.2) 0%, rgba(102,182,92,0) 70%); }
+.podium-card.rank-3 .podium-halo { background: radial-gradient(circle, rgba(72,138,66,0.18) 0%, rgba(72,138,66,0) 70%); }
 
 .podium-content {
   display: grid;

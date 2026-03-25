@@ -686,8 +686,25 @@ body::after {
     padding: 6px 10px;
   }
 
+  .podium-card {
+    aspect-ratio: 1 / 1;
+    display: flex;
+  }
+
   .podium-content {
-    gap: 10px;
+    width: 100%;
+    height: 100%;
+    padding: 8px 7px !important;
+    gap: 6px;
+    align-content: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .podium-topline,
+  .podium-progress-meta,
+  .podium-footerline {
+    justify-content: center;
   }
 
   .podium-rank-chip {
@@ -702,7 +719,7 @@ body::after {
   }
 
   .podium-medal-wrap {
-    min-height: 50px;
+    min-height: 42px;
   }
 
   .podium-medal-ring {
@@ -711,7 +728,7 @@ body::after {
   }
 
   .podium-identity {
-    padding: 7px 9px;
+    padding: 5px 7px;
   }
 
   .podium-address-wrap {
@@ -737,11 +754,11 @@ body::after {
   }
 
   .podium-progress-track {
-    height: 6px;
+    height: 5px;
   }
 
   .podium-footerline {
-    gap: 6px;
+    gap: 4px;
   }
 
   .podium-footer-divider {

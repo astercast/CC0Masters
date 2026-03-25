@@ -1122,9 +1122,10 @@ export default function CC0Masters() {
                             style={{
                               animation:`fadeUp 0.25s ease ${Math.min(i*14,420)}ms both`,
                               background:isOpen?'rgba(124,232,50,0.04)':i%2===0?'rgba(10,18,9,0.3)':'transparent',
+                              borderLeft:isTop3?`3px solid ${rankColor}`:'3px solid transparent',
                             }}>
                             {/* RANK */}
-                            <td style={{textAlign:'center',padding:'10px 8px',borderLeft:isTop3?`3px solid ${rankColor}`:'3px solid transparent'}}>
+                            <td style={{textAlign:'center'}}>
                               <span style={{
                                 fontFamily:'var(--ff-pixel)',
                                 fontSize:isTop3?14:11,
@@ -1132,11 +1133,11 @@ export default function CC0Masters() {
                               }}>{i+1}</span>
                             </td>
                             {/* WALLET */}
-                            <td style={{padding:'10px 12px',whiteSpace:'nowrap'}}>
+                            <td style={{whiteSpace:'nowrap'}}>
                               <AddressDisplay address={entry.address}/>
                             </td>
                             {/* PROGRESS — this column expands to fill space */}
-                            <td style={{padding:'10px 16px 10px 12px'}}>
+                            <td>
                               <div style={{display:'flex',alignItems:'center',gap:10,minWidth:200}}>
                                 <span style={{
                                   fontFamily:'var(--ff-pixel)',
@@ -1166,18 +1167,18 @@ export default function CC0Masters() {
                               </div>
                             </td>
                             {/* TOKENS */}
-                            <td style={{textAlign:'right',padding:'10px 14px 10px 10px',whiteSpace:'nowrap'}}>
+                            <td style={{textAlign:'right',whiteSpace:'nowrap'}}>
                               <span style={{
                                 fontFamily:'var(--ff-mono)',fontSize:12,
                                 color:'var(--text2)',
                               }}>{entry.totalTokensHeld.toLocaleString()}</span>
                             </td>
                             {/* ENERGY */}
-                            <td style={{textAlign:'center',padding:'10px 10px',whiteSpace:'nowrap'}}>
+                            <td style={{textAlign:'center',whiteSpace:'nowrap'}}>
                               <EnergyDots byEnergy={entry.byEnergy}/>
                             </td>
                             {/* STATUS */}
-                            <td style={{textAlign:'center',padding:'10px 14px 10px 10px',whiteSpace:'nowrap'}}>
+                            <td style={{textAlign:'center',whiteSpace:'nowrap'}}>
                               {entry.missing===0?(
                                 <span style={{
                                   fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1,

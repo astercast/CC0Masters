@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import type { LeaderboardData, LeaderboardEntry, CollectorData } from '@/lib/types';
 
@@ -426,11 +426,14 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
 }
 
 function SkeletonRow({ mobile }: { mobile: boolean }) {
-  return <tr style={{borderBottom:'1px solid var(--border)'}}>
-    {(mobile?[28,120,48,36,48]:[32,150,120,50,80,60]).map((w,i)=>(
-      <td key={i} style={{padding:'12px'}}><div className="skeleton" style={{height:8,width:w}}/></td>
-    ))}
-  </tr>;
+  if (mobile) {
+    return <div style={{borderBottom:'1px solid var(--border)',padding:12,display:'flex',gap:8}}>
+      {[28,120,48,36,48].map((w,i)=><div key={i} className="skeleton" style={{height:8,width:w}}/>)}
+    </div>;
+  }
+  return <div className="grid-row grid-skel">
+    {[20,100,200,40,80,50].map((w,i)=><div key={i}><div className="skeleton" style={{height:8,width:w}}/></div>)}
+  </div>;
 }
 
 function DetailPanel({
@@ -1017,10 +1020,17 @@ export default function CC0Masters() {
                   ))}
                 </div>
               ):(
-                <table className="lb-table">
-                  <thead><tr>{['#','WALLET','PROGRESS','TOKENS','ENERGY','STATUS'].map(h=><th key={h}>{h}</th>)}</tr></thead>
-                  <tbody>{Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={false}/>)}</tbody>
-                </table>
+                <div className="grid-table">
+                  <div className="grid-table-hdr">
+                    <div style={{justifyContent:'center'}}>#</div>
+                    <div>WALLET</div>
+                    <div>PROGRESS</div>
+                    <div style={{justifyContent:'flex-end'}}>TOKENS</div>
+                    <div style={{justifyContent:'center'}}>ENERGY</div>
+                    <div style={{justifyContent:'center'}}>STATUS</div>
+                  </div>
+                  {Array.from({length:8}).map((_,i)=><SkeletonRow key={i} mobile={false}/>)}
+                </div>
               )}
             </div>
           ):error?(
@@ -1095,117 +1105,97 @@ export default function CC0Masters() {
                   })}
                 </div>
               ):(
-                /* ── DESKTOP: full table ── */
-                <div style={{overflowX:'auto'}}>
-                  <table className="lb-table" style={{width:'100%'}}>
-                    <thead>
-                      <tr>
-                        <th style={{textAlign:'center'}}>#</th>
-                        <th style={{textAlign:'left'}}>WALLET</th>
-                        <th style={{textAlign:'left'}}>PROGRESS</th>
-                        <th style={{textAlign:'right'}}>TOKENS</th>
-                        <th style={{textAlign:'center'}}>ENERGY</th>
-                        <th style={{textAlign:'center'}}>STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sorted.map((entry,i)=>{
-                        const pct=parseFloat(entry.progress);
-                        const isOpen=openRow===entry.address;
-                        const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text3)';
-                        const variantArr=['gold','silver','bronze'] as const;
-                        const pv=i<3?variantArr[i]:'green';
-                        const isTop3=i<3;
-                        return [
-                          <tr key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}} className={`lb-row${isOpen?' open':''}`}
-                            onClick={()=>setOpenRow(isOpen?null:entry.address)}
-                            style={{
-                              animation:`fadeUp 0.25s ease ${Math.min(i*14,420)}ms both`,
-                              background:isOpen?'rgba(124,232,50,0.04)':i%2===0?'rgba(10,18,9,0.3)':'transparent',
-                              borderLeft:isTop3?`3px solid ${rankColor}`:'3px solid transparent',
+                /* ── DESKTOP: full grid table ── */
+                <div className="grid-table">
+                  {/* HEADER ROW */}
+                  <div className="grid-table-hdr">
+                    <div style={{justifyContent:'center'}}>#</div>
+                    <div>WALLET</div>
+                    <div>PROGRESS</div>
+                    <div style={{justifyContent:'flex-end'}}>TOKENS</div>
+                    <div style={{justifyContent:'center'}}>ENERGY</div>
+                    <div style={{justifyContent:'center'}}>STATUS</div>
+                  </div>
+                  {/* DATA ROWS */}
+                  {sorted.map((entry,i)=>{
+                    const pct=parseFloat(entry.progress);
+                    const isOpen=openRow===entry.address;
+                    const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text3)';
+                    const isTop3=i<3;
+                    return <Fragment key={entry.address}>
+                      <div ref={el=>{rowRefs.current[entry.address]=el;}} className={`grid-row${isOpen?' open':''}`}
+                        onClick={()=>setOpenRow(isOpen?null:entry.address)}
+                        style={{animation:`fadeUp 0.25s ease ${Math.min(i*14,420)}ms both`}}>
+                        {/* # */}
+                        <div style={{justifyContent:'center',borderLeft:isTop3?`3px solid ${rankColor}`:'3px solid transparent'}}>
+                          <span style={{fontFamily:'var(--ff-pixel)',fontSize:isTop3?14:11,color:rankColor}}>{i+1}</span>
+                        </div>
+                        {/* WALLET */}
+                        <div style={{overflow:'hidden'}}>
+                          <AddressDisplay address={entry.address}/>
+                        </div>
+                        {/* PROGRESS */}
+                        <div>
+                          <div style={{display:'flex',alignItems:'center',gap:8,width:'100%'}}>
+                            <span style={{
+                              fontFamily:'var(--ff-pixel)',fontSize:isTop3?16:13,
+                              color:isTop3?rankColor:'var(--text)',
+                              minWidth:36,flexShrink:0,
+                            }}>{entry.collected}</span>
+                            <div style={{flex:1,height:8,background:'rgba(255,255,255,0.04)',borderRadius:1,overflow:'hidden'}}>
+                              <div style={{
+                                height:'100%',
+                                width:`${pct}%`,
+                                background:pct>=100
+                                  ?'linear-gradient(90deg,var(--lime),var(--bright))'
+                                  :pct>80?'linear-gradient(90deg,var(--green2),var(--lime))'
+                                  :pct>50?'linear-gradient(90deg,var(--green1),var(--green2))'
+                                  :'var(--green1)',
+                                borderRadius:1,
+                                transition:'width 0.6s ease',
+                                boxShadow:pct>=80?'0 0 6px rgba(124,232,50,0.3)':'none',
+                              }}/>
+                            </div>
+                            <span style={{
+                              fontFamily:'var(--ff-mono)',fontSize:11,
+                              color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text3)',
+                              flexShrink:0,minWidth:40,textAlign:'right',
+                            }}>{entry.progress}</span>
+                          </div>
+                        </div>
+                        {/* TOKENS */}
+                        <div style={{justifyContent:'flex-end'}}>
+                          <span style={{fontFamily:'var(--ff-mono)',fontSize:12,color:'var(--text2)'}}>{entry.totalTokensHeld.toLocaleString()}</span>
+                        </div>
+                        {/* ENERGY */}
+                        <div style={{justifyContent:'center'}}>
+                          <EnergyDots byEnergy={entry.byEnergy}/>
+                        </div>
+                        {/* STATUS */}
+                        <div style={{justifyContent:'center'}}>
+                          {entry.missing===0?(
+                            <span style={{
+                              fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1,
+                              color:'var(--lime)',
+                              border:'1px solid var(--green2)',
+                              background:'rgba(124,232,50,0.1)',
+                              padding:'3px 8px',
+                            }}>✓ COMPLETE</span>
+                          ):(
+                            <span style={{
+                              fontFamily:'var(--ff-pixel)',fontSize:9,
+                              color:entry.missing<=10?'var(--amber)':entry.missing<=50?'var(--text2)':'var(--text3)',
                             }}>
-                            {/* RANK */}
-                            <td style={{textAlign:'center'}}>
-                              <span style={{
-                                fontFamily:'var(--ff-pixel)',
-                                fontSize:isTop3?14:11,
-                                color:rankColor,
-                              }}>{i+1}</span>
-                            </td>
-                            {/* WALLET */}
-                            <td style={{whiteSpace:'nowrap'}}>
-                              <AddressDisplay address={entry.address}/>
-                            </td>
-                            {/* PROGRESS — this column expands to fill space */}
-                            <td>
-                              <div style={{display:'flex',alignItems:'center',gap:10,minWidth:200}}>
-                                <span style={{
-                                  fontFamily:'var(--ff-pixel)',
-                                  fontSize:isTop3?16:13,
-                                  color:isTop3?rankColor:'var(--text)',
-                                  minWidth:36,flexShrink:0,
-                                }}>{entry.collected}</span>
-                                <div style={{flex:1,height:8,background:'rgba(255,255,255,0.04)',borderRadius:1,overflow:'hidden',position:'relative',minWidth:80}}>
-                                  <div style={{
-                                    height:'100%',
-                                    width:`${pct}%`,
-                                    background:pct>=100
-                                      ?'linear-gradient(90deg,var(--lime),var(--bright))'
-                                      :pct>80?'linear-gradient(90deg,var(--green2),var(--lime))'
-                                      :pct>50?'linear-gradient(90deg,var(--green1),var(--green2))'
-                                      :'var(--green1)',
-                                    borderRadius:1,
-                                    transition:'width 0.6s ease',
-                                    boxShadow:pct>=80?'0 0 6px rgba(124,232,50,0.3)':'none',
-                                  }}/>
-                                </div>
-                                <span style={{
-                                  fontFamily:'var(--ff-mono)',fontSize:11,
-                                  color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text3)',
-                                  flexShrink:0,minWidth:40,textAlign:'right',
-                                }}>{entry.progress}</span>
-                              </div>
-                            </td>
-                            {/* TOKENS */}
-                            <td style={{textAlign:'right',whiteSpace:'nowrap'}}>
-                              <span style={{
-                                fontFamily:'var(--ff-mono)',fontSize:12,
-                                color:'var(--text2)',
-                              }}>{entry.totalTokensHeld.toLocaleString()}</span>
-                            </td>
-                            {/* ENERGY */}
-                            <td style={{textAlign:'center',whiteSpace:'nowrap'}}>
-                              <EnergyDots byEnergy={entry.byEnergy}/>
-                            </td>
-                            {/* STATUS */}
-                            <td style={{textAlign:'center',whiteSpace:'nowrap'}}>
-                              {entry.missing===0?(
-                                <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1,
-                                  color:'var(--lime)',
-                                  border:'1px solid var(--green2)',
-                                  background:'rgba(124,232,50,0.1)',
-                                  padding:'3px 8px',
-                                  display:'inline-block',
-                                }}>✓ COMPLETE</span>
-                              ):(
-                                <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:9,
-                                  color:entry.missing<=10?'var(--amber)':entry.missing<=50?'var(--text2)':'var(--text3)',
-                                  display:'inline-block',
-                                }}>
-                                  NEEDS {entry.missing}
-                                </span>
-                              )}
-                            </td>
-                          </tr>,
-                          isOpen&&<tr key={`${entry.address}-d`}><td colSpan={6} style={{padding:0}}>
-                            <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
-                          </td></tr>,
-                        ];
-                      })}
-                    </tbody>
-                  </table>
+                              NEEDS {entry.missing}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {isOpen&&<div className="grid-detail">
+                        <DetailPanel entry={entry} images={images} registryData={registryData} onNavigate={n=>router.push(`/library?species=${n}`)}/>
+                      </div>}
+                    </Fragment>;
+                  })}
                 </div>
               )}
             </div>

@@ -213,45 +213,60 @@ body::after {
 }
 @keyframes shimmer { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 
-/* ── Table ── */
-.lb-table { width: 100%; border-collapse: collapse; }
-.lb-table th,
-.lb-table td {
-  padding: 10px 12px;
-  vertical-align: middle;
+/* ── Grid Table ── */
+.grid-table {
+  display: grid;
+  grid-template-columns: 40px 160px 1fr 70px 120px 100px;
+  width: 100%;
 }
-.lb-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.grid-table-hdr {
+  display: contents;
 }
-.lb-table th {
+.grid-table-hdr > div {
+  padding: 12px 10px;
   font-family: var(--ff-pixel);
   font-size: 9px;
-  color: var(--green3);
+  color: var(--lime);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
-  background: linear-gradient(180deg, rgba(20,34,18,0.95) 0%, rgba(12,22,10,0.98) 100%);
-  border-bottom: 1px solid var(--green2);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  background: rgba(12,22,10,0.95);
+  border-bottom: 2px solid var(--green2);
+  display: flex;
+  align-items: center;
 }
-.lb-row {
+.grid-row {
+  display: contents;
   cursor: pointer;
+}
+.grid-row > div {
+  padding: 11px 10px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(30,58,26,0.3);
   transition: background 0.15s ease;
-  position: relative;
 }
-.lb-row > td {
-  border-bottom: 1px solid rgba(30,58,26,0.25);
-}
-.lb-row:hover {
-  background: rgba(124,232,50,0.06) !important;
-}
-.lb-row.open {
-  background: rgba(124,232,50,0.08) !important;
-}
-.lb-row:hover > td {
+.grid-row:hover > div {
+  background: rgba(124,232,50,0.06);
   border-bottom-color: var(--green2);
+}
+.grid-row.open > div {
+  background: rgba(124,232,50,0.08);
+}
+.grid-row:nth-child(even) > div {
+  background: rgba(10,18,9,0.3);
+}
+.grid-row:nth-child(even):hover > div {
+  background: rgba(124,232,50,0.06);
+}
+/* Detail panel spans full row */
+.grid-detail {
+  grid-column: 1 / -1;
+}
+/* Skeleton */
+.grid-skel > div {
+  padding: 14px 10px;
+  border-bottom: 1px solid rgba(30,58,26,0.2);
 }
 
 /* ── Detail panel ── */

@@ -370,10 +370,6 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
   const pct = parseFloat(entry.progress);
-  const energyEntries = Object.entries(entry.byEnergy ?? {})
-    .map(([energy, stats]) => [energy, stats.total] as const)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
 
   return (
     <div onClick={onClick}
@@ -392,7 +388,7 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
 
         <div className="podium-medal-wrap">
           <div className="podium-medal-ring" style={{borderColor:`${COLORS[rank]}33`}} />
-          <MedalIcon rank={rank} size={mobile?(rank===1?42:34):(rank===1?68:54)}/>
+          <MedalIcon rank={rank} size={mobile?(rank===1?34:28):(rank===1?56:44)}/>
         </div>
 
         <div className="podium-identity">
@@ -403,7 +399,7 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
 
         <div className="podium-metric-band">
           <div className="podium-main-stat">
-            <span className="podium-main-value" style={{color:COLORS[rank],fontSize:mobile?(rank===1?24:20):(rank===1?52:36)}}>{entry.collected}</span>
+            <span className="podium-main-value" style={{color:COLORS[rank],fontSize:mobile?(rank===1?20:17):(rank===1?40:30)}}>{entry.collected}</span>
             <span className="podium-main-total">/{TOTAL_SPECIES}</span>
           </div>
           <div className="podium-main-label">MASTER SET PROGRESS</div>
@@ -417,16 +413,6 @@ function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:Lead
             <span className="podium-progress-pct" style={{color:COLORS[rank]}}>{entry.progress}</span>
             <span className="podium-progress-tokens">{entry.totalTokensHeld.toLocaleString()} TOKENS</span>
           </div>
-        </div>
-
-        <div className="podium-energy-strip">
-          {energyEntries.map(([energy, value])=>(
-            <div key={energy} className="podium-energy-pill">
-              <span className="podium-energy-dot" style={{background:ENERGY_COLORS[energy] || 'var(--lime)'}} />
-              <span>{energy}</span>
-              <span className="podium-energy-count">{value}</span>
-            </div>
-          ))}
         </div>
 
         <div className="podium-footerline">

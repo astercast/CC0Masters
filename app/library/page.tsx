@@ -473,8 +473,6 @@ function LibraryInner() {
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
   const [deviceTilt,setDeviceTilt] = useState({ x: 0, y: 0 });
-  const cursorRef = useRef<HTMLDivElement|null>(null);
-  const cursorGlowRef = useRef<HTMLDivElement|null>(null);
 
   useEffect(()=>{ _dlgSetter=setConfirm; return()=>{ _dlgSetter=null; }; },[]);
 
@@ -525,59 +523,7 @@ function LibraryInner() {
     }
 
     setDeviceTilt({ x: 0, y: 0 });
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-    document.body.classList.add('cursor-active');
-
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let coreX = mouseX;
-    let coreY = mouseY;
-    let glowX = mouseX;
-    let glowY = mouseY;
-    let raf = 0;
-
-    const updateInteractiveState = (target: EventTarget | null) => {
-      const el = target instanceof HTMLElement ? target : null;
-      const interactive = el?.closest('a, button, input, select, summary, .btn, .species-card-wrap, [role="button"]');
-      document.body.classList.toggle('cursor-clickable', !!interactive);
-    };
-
-    const animate = () => {
-      coreX += (mouseX - coreX) * 0.34;
-      coreY += (mouseY - coreY) * 0.34;
-      glowX += (mouseX - glowX) * 0.16;
-      glowY += (mouseY - glowY) * 0.16;
-      if (cursorRef.current) cursorRef.current.style.transform = `translate(${coreX}px, ${coreY}px) translate(-50%, -50%)`;
-      if (cursorGlowRef.current) cursorGlowRef.current.style.transform = `translate(${glowX}px, ${glowY}px) translate(-50%, -50%)`;
-      raf = window.requestAnimationFrame(animate);
-    };
-
-    const onMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      updateInteractiveState(e.target);
-    };
-    const onDown = () => document.body.classList.add('cursor-pressed');
-    const onUp = () => document.body.classList.remove('cursor-pressed');
-    const onLeave = () => document.body.classList.add('cursor-hidden');
-    const onEnter = () => document.body.classList.remove('cursor-hidden');
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mousedown', onDown);
-    window.addEventListener('mouseup', onUp);
-    document.addEventListener('mouseleave', onLeave);
-    document.addEventListener('mouseenter', onEnter);
-    raf = window.requestAnimationFrame(animate);
-
-    return () => {
-      document.body.classList.remove('cursor-active', 'cursor-clickable', 'cursor-pressed', 'cursor-hidden');
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mousedown', onDown);
-      window.removeEventListener('mouseup', onUp);
-      document.removeEventListener('mouseleave', onLeave);
-      document.removeEventListener('mouseenter', onEnter);
-      window.cancelAnimationFrame(raf);
-    };
+    return () => {};
   }, [mobile]);
 
   // Handle ?species= URL param
@@ -855,14 +801,6 @@ function LibraryInner() {
           onNav={navSpecies}/>
       )}
 
-      {!mobile && (
-        <>
-          <div ref={cursorGlowRef} className="crystal-cursor-glow" aria-hidden="true" />
-          <div ref={cursorRef} className="crystal-cursor" aria-hidden="true">
-            <img src="/Screenshot%202026-03-25%20022708.png" alt="" draggable={false} />
-          </div>
-        </>
-      )}
     </div>
   );
 }

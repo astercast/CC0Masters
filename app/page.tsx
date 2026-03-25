@@ -366,46 +366,20 @@ function MedalIcon({ rank, size=48 }: { rank:1|2|3; size?:number }) {
   );
 }
 
-function PodiumCard({ entry, rank, onClick, isOpen, mobile=false, tiltX=0, tiltY=0 }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean; tiltX?: number; tiltY?: number }) {
+function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean }) {
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
   const pct = parseFloat(entry.progress);
-  const cardRef = useRef<HTMLDivElement|null>(null);
   const energyEntries = Object.entries(entry.byEnergy ?? {})
     .map(([energy, stats]) => [energy, stats.total] as const)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
 
-  const handlePointerMove = (e: any) => {
-    if (mobile || e.pointerType !== 'mouse' || !cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
-    const rx = ((0.5 - py) * 9).toFixed(2);
-    const ry = ((px - 0.5) * 11).toFixed(2);
-    cardRef.current.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
-    cardRef.current.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
-    cardRef.current.style.setProperty('--rx', `${rx}deg`);
-    cardRef.current.style.setProperty('--ry', `${ry}deg`);
-  };
-
-  const resetTilt = () => {
-    if (!cardRef.current) return;
-    cardRef.current.style.setProperty('--mx', '50%');
-    cardRef.current.style.setProperty('--my', '20%');
-    cardRef.current.style.setProperty('--rx', '0deg');
-    cardRef.current.style.setProperty('--ry', '0deg');
-  };
-
   return (
-    <div ref={cardRef} onClick={onClick} onPointerMove={handlePointerMove} onPointerLeave={resetTilt}
+    <div onClick={onClick}
       onPointerDown={e=>{ if (e.pointerType !== 'mouse') pulseHaptics(10); }}
       className={`podium-card rank-${rank}${isOpen?' open':''}`}
-      style={{
-        animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`,
-        ['--device-rx' as string]: `${tiltY.toFixed(2)}deg`,
-        ['--device-ry' as string]: `${tiltX.toFixed(2)}deg`,
-      }}>
+      style={{animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`}}>
       <div className="podium-shell" />
       <div className="podium-noise" />
       <div className="podium-halo" />
@@ -640,9 +614,6 @@ export default function CC0Masters() {
   const scanAbort = useRef(false);
   const rowRefs = useRef<Record<string,HTMLElement|null>>({});
   const rankingsRef = useRef<HTMLDivElement|null>(null);
-  const cursorRef = useRef<HTMLDivElement|null>(null);
-  const cursorGlowRef = useRef<HTMLDivElement|null>(null);
-  const [deviceTilt,setDeviceTilt] = useState({ x: 0, y: 0 });
 
   const handlePodiumClick = (address: string) => {
     pulseHaptics([12, 18, 12]);
@@ -706,116 +677,9 @@ export default function CC0Masters() {
   },[]);
 
   useEffect(()=>{
-    if (!mobile) {
-      setDeviceTilt({ x: 0, y: 0 });
-      return;
-    }
-
-    let active = true;
-    let bound = false;
-    const onOrientation = (event: DeviceOrientationEvent) => {
-      if (!active) return;
-      const gamma = typeof event.gamma === 'number' ? event.gamma : 0;
-      const beta = typeof event.beta === 'number' ? event.beta : 0;
-      const x = Math.max(-5, Math.min(5, gamma / 8));
-      const y = Math.max(-5, Math.min(5, (beta - 45) / 12));
-      setDeviceTilt({ x, y });
-    };
-
-    const bindOrientation = () => {
-      if (bound) return;
-      window.addEventListener('deviceorientation', onOrientation, true);
-      bound = true;
-    };
-
-    const orientationWithPermission = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-      requestPermission?: () => Promise<'granted' | 'denied'>;
-    };
-
-    if (typeof orientationWithPermission?.requestPermission === 'function') {
-      const onFirstTouch = async () => {
-        try {
-          const result = await orientationWithPermission.requestPermission?.();
-          if (result === 'granted') bindOrientation();
-        } catch {}
-      };
-      window.addEventListener('touchstart', onFirstTouch, { once: true, passive: true });
-      return () => {
-        active = false;
-        window.removeEventListener('touchstart', onFirstTouch);
-        if (bound) window.removeEventListener('deviceorientation', onOrientation, true);
-      };
-    }
-
-    bindOrientation();
-    return () => {
-      active = false;
-      if (bound) window.removeEventListener('deviceorientation', onOrientation, true);
-    };
-  }, [mobile]);
-
-  useEffect(()=>{
     if (mobile) return;
     if (!window.matchMedia('(pointer: fine)').matches) return;
-
-    document.body.classList.add('cursor-active');
-
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let coreX = mouseX;
-    let coreY = mouseY;
-    let glowX = mouseX;
-    let glowY = mouseY;
-    let raf = 0;
-
-    const updateInteractiveState = (target: EventTarget | null) => {
-      const el = target instanceof HTMLElement ? target : null;
-      const interactive = el?.closest('a, button, input, select, summary, .btn, .podium-card, .grid-row, [role="button"]');
-      document.body.classList.toggle('cursor-clickable', !!interactive);
-    };
-
-    const animate = () => {
-      coreX += (mouseX - coreX) * 0.34;
-      coreY += (mouseY - coreY) * 0.34;
-      glowX += (mouseX - glowX) * 0.16;
-      glowY += (mouseY - glowY) * 0.16;
-
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate(${coreX}px, ${coreY}px) translate(-50%, -50%)`;
-      }
-      if (cursorGlowRef.current) {
-        cursorGlowRef.current.style.transform = `translate(${glowX}px, ${glowY}px) translate(-50%, -50%)`;
-      }
-
-      raf = window.requestAnimationFrame(animate);
-    };
-
-    const onMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      updateInteractiveState(e.target);
-    };
-
-    const onDown = () => document.body.classList.add('cursor-pressed');
-    const onUp = () => document.body.classList.remove('cursor-pressed');
-    const onLeave = () => document.body.classList.add('cursor-hidden');
-    const onEnter = () => document.body.classList.remove('cursor-hidden');
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mousedown', onDown);
-    window.addEventListener('mouseup', onUp);
-    document.addEventListener('mouseleave', onLeave);
-    document.addEventListener('mouseenter', onEnter);
-    raf = window.requestAnimationFrame(animate);
-
     return () => {
-      document.body.classList.remove('cursor-active', 'cursor-clickable', 'cursor-pressed', 'cursor-hidden');
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mousedown', onDown);
-      window.removeEventListener('mouseup', onUp);
-      document.removeEventListener('mouseleave', onLeave);
-      document.removeEventListener('mouseenter', onEnter);
-      window.cancelAnimationFrame(raf);
     };
   }, [mobile]);
 
@@ -1106,8 +970,6 @@ export default function CC0Masters() {
                 </div>
                 <div className="podium-header-mainline">
                   <div className="podium-header-titleblock">
-                    <div className="podium-header-title">Master Collector Throne</div>
-                    <div className="podium-header-subtitle">The sharpest wallets, the cleanest full-set chase, the top three on-chain collectors.</div>
                   </div>
                   <div className="podium-header-count">{(data?.leaders?.length??0).toLocaleString()} COLLECTORS</div>
                 </div>
@@ -1116,9 +978,9 @@ export default function CC0Masters() {
             </div>
             <div style={{display:'grid',gridTemplateColumns:mobile?'1fr 1fr 1fr':'1fr 1.1fr 1fr',gap:mobile?4:8,alignItems:'end',marginBottom:8}}>
               <>
-                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
-                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
-                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
+                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address} mobile={mobile}/>
+                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address} mobile={mobile}/>
+                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address} mobile={mobile}/>
               </>
             </div>
           </section>
@@ -1485,15 +1347,6 @@ export default function CC0Masters() {
 
         </div>
       </footer>
-
-      {!mobile && (
-        <>
-          <div ref={cursorGlowRef} className="crystal-cursor-glow" aria-hidden="true" />
-          <div ref={cursorRef} className="crystal-cursor" aria-hidden="true">
-            <img src="/Screenshot%202026-03-25%20022708.png" alt="" draggable={false} />
-          </div>
-        </>
-      )}
     </div>
   );
 }

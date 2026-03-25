@@ -66,6 +66,7 @@ body {
   body.cursor-active summary,
   body.cursor-active .btn,
   body.cursor-active .podium-card,
+  body.cursor-active .species-card-wrap,
   body.cursor-active .grid-row {
     cursor: none !important;
   }
@@ -383,6 +384,12 @@ body::after {
 /* ── Podium cards ── */
 .podium-card {
   --podium-edge: rgba(124,232,50,0.22);
+  --mx: 50%;
+  --my: 20%;
+  --rx: 0deg;
+  --ry: 0deg;
+  --device-rx: 0deg;
+  --device-ry: 0deg;
   background:
     radial-gradient(circle at top center, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 36%),
     linear-gradient(180deg, rgba(18,28,18,0.98) 0%, rgba(8,14,8,0.98) 100%);
@@ -392,6 +399,8 @@ body::after {
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateX(calc(var(--rx) + var(--device-rx))) rotateY(calc(var(--ry) + var(--device-ry)));
   min-height: 100%;
   transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease, border-color 0.35s ease, background 0.35s ease;
   box-shadow:
@@ -400,7 +409,7 @@ body::after {
     inset 0 0 0 1px rgba(255,255,255,0.02);
 }
 .podium-card:hover {
-  transform: translateY(-8px) scale(1.01);
+  transform: perspective(1200px) translateY(-8px) scale(1.01) rotateX(calc(var(--rx) + var(--device-rx))) rotateY(calc(var(--ry) + var(--device-ry)));
   box-shadow:
     0 28px 72px rgba(0,0,0,0.52),
     0 0 0 1px rgba(255,255,255,0.04),
@@ -457,9 +466,10 @@ body::after {
   pointer-events: none;
   z-index: 0;
   background:
+    radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,0.12), rgba(255,255,255,0) 28%),
     linear-gradient(115deg, transparent 0%, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%, transparent 100%),
     repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.018) 3px, rgba(255,255,255,0.018) 4px);
-  background-size: 220% 220%, auto;
+  background-size: auto, 220% 220%, auto;
   animation: podiumSheen 7s linear infinite;
 }
 
@@ -503,6 +513,7 @@ body::after {
 .podium-content {
   display: grid;
   gap: 14px;
+  transform: translateZ(18px);
 }
 
 .podium-topline,
@@ -698,6 +709,87 @@ body::after {
   width: 28px;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+
+.podium-header-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.podium-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid rgba(124,232,50,0.18);
+  background: linear-gradient(180deg, rgba(18,28,18,0.96), rgba(9,14,8,0.96));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 28px rgba(0,0,0,0.24);
+}
+
+.podium-header-orb {
+  width: 8px;
+  height: 8px;
+  background: var(--lime);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(124,232,50,0.8), 0 0 24px rgba(124,232,50,0.35);
+  animation: cursorGlowBreath 2.2s ease-in-out infinite;
+}
+
+.podium-header-kicker,
+.podium-header-count,
+.podium-header-subtitle,
+.podium-header-title {
+  font-family: var(--ff-pixel);
+}
+
+.podium-header-kicker {
+  font-size: 10px;
+  color: var(--bright);
+  letter-spacing: 0.22em;
+}
+
+.podium-header-mainline {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.podium-header-titleblock {
+  display: grid;
+  gap: 6px;
+}
+
+.podium-header-title {
+  font-size: clamp(18px, 2vw, 26px);
+  color: var(--bright);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 20px rgba(124,232,50,0.18);
+}
+
+.podium-header-subtitle {
+  max-width: 720px;
+  color: var(--text3);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  line-height: 1.8;
+}
+
+.podium-header-count {
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--text2);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.podium-header-rule {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(124,232,50,0), rgba(124,232,50,0.5), rgba(124,232,50,0));
+  box-shadow: 0 0 14px rgba(124,232,50,0.18);
 }
 
 @keyframes podiumSheen {
@@ -1186,6 +1278,36 @@ main {
   box-shadow: 0 4px 40px rgba(0,0,0,0.4);
 }
 
+.library-hero {
+  position: relative;
+}
+
+.library-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(124,232,50,0), rgba(124,232,50,0.45), rgba(124,232,50,0));
+  transform: translateY(-10px);
+}
+
+.library-hero-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.library-hero-subtitle {
+  max-width: 720px;
+  line-height: 1.9;
+}
+
+.library-hero-legend {
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.025);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
 /* ── Neon number display ── */
 .neon-num {
   font-family: var(--ff-vt);
@@ -1281,15 +1403,37 @@ input[type="text"]:focus, select:focus {
 
 /* ── Library card: energy glow aura on hover ── */
 .species-card-wrap {
+  --mx: 50%;
+  --my: 24%;
+  --rx: 0deg;
+  --ry: 0deg;
+  --device-rx: 0deg;
+  --device-ry: 0deg;
+  transform-style: preserve-3d;
   transition: transform 0.22s cubic-bezier(0.16,1,0.3,1), box-shadow 0.22s ease, border-color 0.22s ease;
 }
 .species-card-wrap:hover {
-  transform: translateY(-6px) scale(1.03);
+  transform: perspective(1000px) translateY(-6px) scale(1.03) rotateX(calc(var(--rx) + var(--device-rx))) rotateY(calc(var(--ry) + var(--device-ry)));
   box-shadow:
     0 20px 48px rgba(0,0,0,0.6),
     0 8px 16px rgba(0,0,0,0.4),
     0 0 0 1px var(--card-col, var(--lime)),
     0 0 24px var(--card-col, rgba(124,232,50,0.12));
+}
+
+.species-card-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,0.12), rgba(255,255,255,0) 30%);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.species-card-wrap:hover::before {
+  opacity: 1;
 }
 
 /* ── Card inner glow pulse on hover ── */

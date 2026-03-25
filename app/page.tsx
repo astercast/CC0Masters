@@ -366,18 +366,46 @@ function MedalIcon({ rank, size=48 }: { rank:1|2|3; size?:number }) {
   );
 }
 
-function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean }) {
+function PodiumCard({ entry, rank, onClick, isOpen, mobile=false, tiltX=0, tiltY=0 }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean; tiltX?: number; tiltY?: number }) {
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
   const pct = parseFloat(entry.progress);
+  const cardRef = useRef<HTMLDivElement|null>(null);
   const energyEntries = Object.entries(entry.byEnergy ?? {})
     .map(([energy, stats]) => [energy, stats.total] as const)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
 
+  const handlePointerMove = (e: any) => {
+    if (mobile || e.pointerType !== 'mouse' || !cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const rx = ((0.5 - py) * 9).toFixed(2);
+    const ry = ((px - 0.5) * 11).toFixed(2);
+    cardRef.current.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
+    cardRef.current.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
+    cardRef.current.style.setProperty('--rx', `${rx}deg`);
+    cardRef.current.style.setProperty('--ry', `${ry}deg`);
+  };
+
+  const resetTilt = () => {
+    if (!cardRef.current) return;
+    cardRef.current.style.setProperty('--mx', '50%');
+    cardRef.current.style.setProperty('--my', '20%');
+    cardRef.current.style.setProperty('--rx', '0deg');
+    cardRef.current.style.setProperty('--ry', '0deg');
+  };
+
   return (
-    <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}`}
-      style={{animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`}}>
+    <div ref={cardRef} onClick={onClick} onPointerMove={handlePointerMove} onPointerLeave={resetTilt}
+      onPointerDown={e=>{ if (e.pointerType !== 'mouse') pulseHaptics(10); }}
+      className={`podium-card rank-${rank}${isOpen?' open':''}`}
+      style={{
+        animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`,
+        ['--device-rx' as string]: `${tiltY.toFixed(2)}deg`,
+        ['--device-ry' as string]: `${tiltX.toFixed(2)}deg`,
+      }}>
       <div className="podium-shell" />
       <div className="podium-noise" />
       <div className="podium-halo" />
@@ -577,6 +605,11 @@ function useMobile() {
   return mobile;
 }
 
+function pulseHaptics(pattern: number | number[] = 12) {
+  if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+  navigator.vibrate(pattern);
+}
+
 export default function CC0Masters() {
   const mobile = useMobile();
   const router = useRouter();
@@ -609,8 +642,10 @@ export default function CC0Masters() {
   const rankingsRef = useRef<HTMLDivElement|null>(null);
   const cursorRef = useRef<HTMLDivElement|null>(null);
   const cursorGlowRef = useRef<HTMLDivElement|null>(null);
+  const [deviceTilt,setDeviceTilt] = useState({ x: 0, y: 0 });
 
   const handlePodiumClick = (address: string) => {
+    pulseHaptics([12, 18, 12]);
     // Scroll to the row in the rankings table and open it there
     setOpenRow(address);
     setTimeout(()=>{
@@ -669,6 +704,55 @@ export default function CC0Masters() {
       setRegistryData(prev=>{ const n={...prev}; for(const [k,v] of Object.entries(rd)) n[k]={...n[k],...v}; return n; });
     }).catch(()=>{});
   },[]);
+
+  useEffect(()=>{
+    if (!mobile) {
+      setDeviceTilt({ x: 0, y: 0 });
+      return;
+    }
+
+    let active = true;
+    let bound = false;
+    const onOrientation = (event: DeviceOrientationEvent) => {
+      if (!active) return;
+      const gamma = typeof event.gamma === 'number' ? event.gamma : 0;
+      const beta = typeof event.beta === 'number' ? event.beta : 0;
+      const x = Math.max(-5, Math.min(5, gamma / 8));
+      const y = Math.max(-5, Math.min(5, (beta - 45) / 12));
+      setDeviceTilt({ x, y });
+    };
+
+    const bindOrientation = () => {
+      if (bound) return;
+      window.addEventListener('deviceorientation', onOrientation, true);
+      bound = true;
+    };
+
+    const orientationWithPermission = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+      requestPermission?: () => Promise<'granted' | 'denied'>;
+    };
+
+    if (typeof orientationWithPermission?.requestPermission === 'function') {
+      const onFirstTouch = async () => {
+        try {
+          const result = await orientationWithPermission.requestPermission?.();
+          if (result === 'granted') bindOrientation();
+        } catch {}
+      };
+      window.addEventListener('touchstart', onFirstTouch, { once: true, passive: true });
+      return () => {
+        active = false;
+        window.removeEventListener('touchstart', onFirstTouch);
+        if (bound) window.removeEventListener('deviceorientation', onOrientation, true);
+      };
+    }
+
+    bindOrientation();
+    return () => {
+      active = false;
+      if (bound) window.removeEventListener('deviceorientation', onOrientation, true);
+    };
+  }, [mobile]);
 
   useEffect(()=>{
     if (mobile) return;
@@ -1015,22 +1099,26 @@ export default function CC0Masters() {
         {!loading&&!error&&sorted.length>=3&&(
           <section style={{marginBottom:24}}>
             <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--bright)',letterSpacing:3,
-                background:'var(--bg3)',border:'2px solid var(--green1)',padding:'6px 14px',
-                display:'flex',alignItems:'center',gap:8,whiteSpace:'nowrap'}}>
-                <span style={{color:'var(--green2)',fontSize:10}}>◆</span> CHAMPION PODIUM
-              </div>
-              <div style={{flex:1,height:2,background:'repeating-linear-gradient(90deg,var(--green1) 0,var(--green1) 4px,transparent 4px,transparent 8px)'}}/>
-              <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',letterSpacing:1,
-                background:'var(--bg)',border:'1px solid var(--border)',padding:'4px 10px'}}>
-                {(data?.leaders?.length??0).toLocaleString()} COLLECTORS
+              <div className="podium-header-wrap" style={{width:'100%'}}>
+                <div className="podium-header-badge">
+                  <span className="podium-header-orb" />
+                  <span className="podium-header-kicker">CHAMPION PODIUM</span>
+                </div>
+                <div className="podium-header-mainline">
+                  <div className="podium-header-titleblock">
+                    <div className="podium-header-title">Master Collector Throne</div>
+                    <div className="podium-header-subtitle">The sharpest wallets, the cleanest full-set chase, the top three on-chain collectors.</div>
+                  </div>
+                  <div className="podium-header-count">{(data?.leaders?.length??0).toLocaleString()} COLLECTORS</div>
+                </div>
+                <div className="podium-header-rule" />
               </div>
             </div>
             <div style={{display:'grid',gridTemplateColumns:mobile?'1fr 1fr 1fr':'1fr 1.1fr 1fr',gap:mobile?4:8,alignItems:'end',marginBottom:8}}>
               <>
-                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address} mobile={mobile}/>
-                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address} mobile={mobile}/>
-                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address} mobile={mobile}/>
+                <PodiumCard entry={sorted[1]} rank={2} onClick={()=>handlePodiumClick(sorted[1].address)} isOpen={openRow===sorted[1].address} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
+                <PodiumCard entry={sorted[0]} rank={1} onClick={()=>handlePodiumClick(sorted[0].address)} isOpen={openRow===sorted[0].address} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
+                <PodiumCard entry={sorted[2]} rank={3} onClick={()=>handlePodiumClick(sorted[2].address)} isOpen={openRow===sorted[2].address} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
               </>
             </div>
           </section>
@@ -1402,7 +1490,7 @@ export default function CC0Masters() {
         <>
           <div ref={cursorGlowRef} className="crystal-cursor-glow" aria-hidden="true" />
           <div ref={cursorRef} className="crystal-cursor" aria-hidden="true">
-            <img src="/cursor-crystal.svg" alt="" draggable={false} />
+            <img src="/Screenshot%202026-03-25%20022708.png" alt="" draggable={false} />
           </div>
         </>
       )}

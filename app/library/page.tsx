@@ -13,6 +13,11 @@ function useMobile() {
   return m;
 }
 
+function pulseHaptics(pattern: number | number[] = 10) {
+  if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
+  navigator.vibrate(pattern);
+}
+
 const CC0_CONTRACT = '0xeeb036dbbd3039429c430657ed9836568da79d5f';
 
 const EC: Record<string,string> = {
@@ -83,15 +88,40 @@ function Sprite({src,name,size=56,dimmed=false}:{src:string;name:string;size?:nu
 }
 
 /* ── Species Card — collectible card aesthetic ── */
-function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void}) {
+function Card({sp,holders,onClick,mobile=false,tiltX=0,tiltY=0}:{sp:Species;holders:number;onClick:()=>void;mobile?:boolean;tiltX?:number;tiltY?:number}) {
   const col=EC[sp.energy]||'#7ee832';
   const rc=RC[sp.rarity]||'#90c880';
   const [hov,setHov]=useState(false);
+  const cardRef=useRef<HTMLDivElement|null>(null);
+
+  const handlePointerMove = (e: any) => {
+    if (mobile || e.pointerType !== 'mouse' || !cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    cardRef.current.style.setProperty('--mx', `${(px * 100).toFixed(1)}%`);
+    cardRef.current.style.setProperty('--my', `${(py * 100).toFixed(1)}%`);
+    cardRef.current.style.setProperty('--rx', `${((0.5 - py) * 8).toFixed(2)}deg`);
+    cardRef.current.style.setProperty('--ry', `${((px - 0.5) * 10).toFixed(2)}deg`);
+  };
+
+  const resetTilt = () => {
+    if (!cardRef.current) return;
+    cardRef.current.style.setProperty('--mx', '50%');
+    cardRef.current.style.setProperty('--my', '24%');
+    cardRef.current.style.setProperty('--rx', '0deg');
+    cardRef.current.style.setProperty('--ry', '0deg');
+  };
+
   return (
-    <div onClick={onClick}
+    <div ref={cardRef} onClick={onClick}
       className={`species-card-wrap card-${sp.energy.toLowerCase()} rarity-${sp.rarity.toLowerCase()}`}
+      onPointerMove={handlePointerMove} onPointerLeave={resetTilt}
+      onPointerDown={e=>{ if (e.pointerType !== 'mouse') pulseHaptics(8); }}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{'--card-col':col,
+        ['--device-rx' as string]: `${tiltY.toFixed(2)}deg`,
+        ['--device-ry' as string]: `${tiltX.toFixed(2)}deg`,
         background:hov
           ?`linear-gradient(145deg,${col}12 0%,var(--bg3) 40%,var(--panel) 100%)`
           :`linear-gradient(145deg,var(--bg3) 0%,var(--panel) 100%)`,
@@ -442,8 +472,113 @@ function LibraryInner() {
   const [descMap,setDescMap]=useState<Record<number,string>>({});
   const [confirm,setConfirm]=useState<string|null>(null);
   const [view,setView]=useState<'grid'|'list'>('grid');
+  const [deviceTilt,setDeviceTilt] = useState({ x: 0, y: 0 });
+  const cursorRef = useRef<HTMLDivElement|null>(null);
+  const cursorGlowRef = useRef<HTMLDivElement|null>(null);
 
   useEffect(()=>{ _dlgSetter=setConfirm; return()=>{ _dlgSetter=null; }; },[]);
+
+  useEffect(()=>{
+    if (mobile) {
+      let active = true;
+      let bound = false;
+      const onOrientation = (event: DeviceOrientationEvent) => {
+        if (!active) return;
+        const gamma = typeof event.gamma === 'number' ? event.gamma : 0;
+        const beta = typeof event.beta === 'number' ? event.beta : 0;
+        setDeviceTilt({
+          x: Math.max(-5, Math.min(5, gamma / 8)),
+          y: Math.max(-5, Math.min(5, (beta - 45) / 12)),
+        });
+      };
+
+      const bindOrientation = () => {
+        if (bound) return;
+        window.addEventListener('deviceorientation', onOrientation, true);
+        bound = true;
+      };
+
+      const orientationWithPermission = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+        requestPermission?: () => Promise<'granted' | 'denied'>;
+      };
+
+      if (typeof orientationWithPermission?.requestPermission === 'function') {
+        const onFirstTouch = async () => {
+          try {
+            const result = await orientationWithPermission.requestPermission?.();
+            if (result === 'granted') bindOrientation();
+          } catch {}
+        };
+        window.addEventListener('touchstart', onFirstTouch, { once: true, passive: true });
+        return () => {
+          active = false;
+          window.removeEventListener('touchstart', onFirstTouch);
+          if (bound) window.removeEventListener('deviceorientation', onOrientation, true);
+        };
+      }
+
+      bindOrientation();
+      return () => {
+        active = false;
+        if (bound) window.removeEventListener('deviceorientation', onOrientation, true);
+      };
+    }
+
+    setDeviceTilt({ x: 0, y: 0 });
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    document.body.classList.add('cursor-active');
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let coreX = mouseX;
+    let coreY = mouseY;
+    let glowX = mouseX;
+    let glowY = mouseY;
+    let raf = 0;
+
+    const updateInteractiveState = (target: EventTarget | null) => {
+      const el = target instanceof HTMLElement ? target : null;
+      const interactive = el?.closest('a, button, input, select, summary, .btn, .species-card-wrap, [role="button"]');
+      document.body.classList.toggle('cursor-clickable', !!interactive);
+    };
+
+    const animate = () => {
+      coreX += (mouseX - coreX) * 0.34;
+      coreY += (mouseY - coreY) * 0.34;
+      glowX += (mouseX - glowX) * 0.16;
+      glowY += (mouseY - glowY) * 0.16;
+      if (cursorRef.current) cursorRef.current.style.transform = `translate(${coreX}px, ${coreY}px) translate(-50%, -50%)`;
+      if (cursorGlowRef.current) cursorGlowRef.current.style.transform = `translate(${glowX}px, ${glowY}px) translate(-50%, -50%)`;
+      raf = window.requestAnimationFrame(animate);
+    };
+
+    const onMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      updateInteractiveState(e.target);
+    };
+    const onDown = () => document.body.classList.add('cursor-pressed');
+    const onUp = () => document.body.classList.remove('cursor-pressed');
+    const onLeave = () => document.body.classList.add('cursor-hidden');
+    const onEnter = () => document.body.classList.remove('cursor-hidden');
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseenter', onEnter);
+    raf = window.requestAnimationFrame(animate);
+
+    return () => {
+      document.body.classList.remove('cursor-active', 'cursor-clickable', 'cursor-pressed', 'cursor-hidden');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseenter', onEnter);
+      window.cancelAnimationFrame(raf);
+    };
+  }, [mobile]);
 
   // Handle ?species= URL param
   useEffect(()=>{
@@ -508,16 +643,18 @@ function LibraryInner() {
   });
 
   const selectSpecies=(sp:Species)=>{
+    pulseHaptics([10, 12, 10]);
     setSelected(sp);
     router.replace(`/library?species=${sp.number}`,{scroll:false});
   };
   const closeModal=()=>{
+    pulseHaptics(8);
     setSelected(null);
     router.replace('/library',{scroll:false});
   };
   const navSpecies=(n:number)=>{
     const sp=species.find(s=>s.number===n);
-    if (sp) { setSelected(sp); router.replace(`/library?species=${n}`,{scroll:false}); }
+    if (sp) { pulseHaptics(8); setSelected(sp); router.replace(`/library?species=${n}`,{scroll:false}); }
   };
 
   const totalWithHolders=Object.values(holderMap).filter(v=>v.length>0).length;
@@ -556,8 +693,8 @@ function LibraryInner() {
         </div>
 
         {/* title + stats */}
-        <div style={{padding:'16px 24px 0',display:'flex',alignItems:'flex-end',gap:24,flexWrap:'wrap'}}>
-          <div>
+        <div className="library-hero" style={{padding:'16px 24px 0',display:'flex',alignItems:'flex-end',gap:24,flexWrap:'wrap'}}>
+          <div className="library-hero-copy">
             <div style={{position:'relative',marginBottom:4}}>
               {['rgba(255,0,80,0.1)','rgba(0,220,255,0.1)'].map((c,i)=>(
                 <div key={i} style={{position:'absolute',top:0,left:0,
@@ -571,12 +708,13 @@ function LibraryInner() {
                 CC0MON LIBRARY
               </div>
             </div>
-            <div style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
+            <div className="library-hero-subtitle" style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
               letterSpacing:2,marginBottom:14}}>
+              Browse every species, inspect holder depth, and explore rarity with the same motion language as the leaderboard podium.
             </div>
           </div>
           {/* quick rarity legend */}
-          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14,marginLeft:'auto'}}>
+          <div className="library-hero-legend" style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14,marginLeft:'auto'}}>
             {RARITY_ORDER.map(r=>(
               <div key={r} onClick={()=>setFilterRarity(filterRarity===r?'':r)}
                 style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
@@ -662,7 +800,7 @@ function LibraryInner() {
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:8}}>
             {filtered.map(sp=>(
               <Card key={sp.number} sp={sp} holders={holderMap[sp.number]?.length??0}
-                onClick={()=>selectSpecies(sp)}/>
+                onClick={()=>selectSpecies(sp)} mobile={mobile} tiltX={deviceTilt.x} tiltY={deviceTilt.y}/>
             ))}
           </div>
         ):(
@@ -715,6 +853,15 @@ function LibraryInner() {
           allSpecies={species}
           onClose={closeModal}
           onNav={navSpecies}/>
+      )}
+
+      {!mobile && (
+        <>
+          <div ref={cursorGlowRef} className="crystal-cursor-glow" aria-hidden="true" />
+          <div ref={cursorRef} className="crystal-cursor" aria-hidden="true">
+            <img src="/Screenshot%202026-03-25%20022708.png" alt="" draggable={false} />
+          </div>
+        </>
       )}
     </div>
   );

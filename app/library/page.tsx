@@ -157,7 +157,10 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
   const desc = descMap[sp.number] || '';
   const col=EC[sp.energy]||'#7ee832';
   const rc=RC[sp.rarity]||'#90c880';
-  const supply=supplyMap[sp.number]; // real count from holder tokenIds
+  // Real supply from blob (populated after Admin Scan) — or count from leaderboard holders as minimum
+  const supply = supplyMap[sp.number] != null 
+    ? supplyMap[sp.number] 
+    : null; // null = not yet computed
   const holders=holderMap[sp.number]||[];
 
   // prev/next navigation
@@ -165,26 +168,40 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
   const prev=idx>0?allSpecies[idx-1]:null;
   const next=idx<allSpecies.length-1?allSpecies[idx+1]:null;
 
-  // Fetch per-species token counts for each holder from CC0mon API
+  // Fetch per-species token counts — sequential with delay to avoid rate limits
   useEffect(()=>{
     const holdersForSp = holderMap[sp.number]||[];
     if (!holdersForSp.length) return;
-    Promise.allSettled(holdersForSp.map(async h=>{
-      try {
-        const r=await fetch(`https://api.cc0mon.com/collector/${h.address}`,{signal:AbortSignal.timeout(6000)});
-        const d=await r.json();
-        const spData=d.checklist?.find((s:any)=>s.number===sp.number);
-        return {address:h.address, tokenCount:spData?.tokenIds?.length??1};
-      } catch { return {address:h.address,tokenCount:h.tokenCount??1}; }
-    })).then(results=>{
+    let cancelled = false;
+    (async () => {
       const counts:Record<string,number>={};
-      for (const r of results) if (r.status==='fulfilled') counts[r.value.address]=r.value.tokenCount;
-      setHolderMap(prev=>{
-        const updated=[...(prev[sp.number]||[])].map(h=>({...h,tokenCount:counts[h.address]??h.tokenCount}))
-          .sort((a,b)=>(b.tokenCount??1)-(a.tokenCount??1));
-        return {...prev,[sp.number]:updated};
-      });
-    });
+      // Fetch in batches of 5 with 1s delay between batches
+      const BATCH = 5;
+      for (let i=0; i<holdersForSp.length && !cancelled; i+=BATCH) {
+        const batch = holdersForSp.slice(i, i+BATCH);
+        await Promise.allSettled(batch.map(async h=>{
+          try {
+            const r=await fetch(`https://api.cc0mon.com/collector/${h.address}`,
+              {signal:AbortSignal.timeout(8000)});
+            if (!r.ok) return;
+            const d=await r.json();
+            const spData=d.checklist?.find((s:any)=>s.number===sp.number);
+            counts[h.address]=spData?.tokenIds?.length??1;
+          } catch {}
+        }));
+        // Update display after each batch
+        if (!cancelled && Object.keys(counts).length > 0) {
+          setHolderMap(prev=>{
+            const updated=[...(prev[sp.number]||[])].map(h=>({
+              ...h, tokenCount: counts[h.address] ?? h.tokenCount
+            })).sort((a,b)=>(b.tokenCount??0)-(a.tokenCount??0));
+            return {...prev,[sp.number]:updated};
+          });
+        }
+        if (i+BATCH < holdersForSp.length) await new Promise(r=>setTimeout(r,1100));
+      }
+    })();
+    return ()=>{ cancelled=true; };
   },[sp.number]);
 
 
@@ -326,7 +343,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,padding:mobile?'10px 16px 12px':'20px 32px 16px'}}>
           {([
             [holders.length||'—','HOLDERS',col],
-            [supply!=null?String(supply):'…','SUPPLY','var(--bright)'],
+            [supply!=null?String(supply):'RUN SCAN','SUPPLY','var(--bright)'],
             [sp.rarity,sp.rarity==='Legendary'?'⭐ RARITY':'RARITY',rc],
           ] as [any,string,string][]).map(([v,l,c])=>(
             <div key={l} style={{background:'var(--bg)',border:`1px solid ${c}18`,
@@ -676,7 +693,7 @@ function LibraryInner() {
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:11,color:'var(--text)'}}>{sp.name}</span>
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:col}}>{sp.energy}</span>
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:rc}}>{sp.rarity}</span>
-                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--bright)'}}>{supplyMap[sp.number]!=null?supplyMap[sp.number]:'…'}</span>
+                  <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--bright)'}}>{supplyMap[sp.number]!=null?supplyMap[sp.number]:'—'}</span>
                   <span style={{fontFamily:'var(--ff-pixel)',fontSize:9,color:'var(--lime)'}}>
                     {holderMap[sp.number]?.length||'—'}
                   </span>

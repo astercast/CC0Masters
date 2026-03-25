@@ -592,6 +592,7 @@ function LibraryInner() {
     acc[key] = (acc[key] ?? 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+  const visibleRarityOrder = RARITY_ORDER.filter(r => (rarityCounts[r] ?? 0) > 0);
   const filtered=species.filter(sp=>{
     const q=search.toLowerCase();
     if (q&&!sp.name.toLowerCase().includes(q)&&!String(sp.number).includes(q)&&!sp.energy.toLowerCase().includes(q)) return false;
@@ -673,7 +674,7 @@ function LibraryInner() {
           </div>
           {/* quick rarity legend */}
           <div className="library-hero-legend" style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14,marginLeft:'auto'}}>
-            {RARITY_ORDER.map(r=>(
+            {visibleRarityOrder.map(r=>(
               <div key={r} onClick={()=>setFilterRarity(filterRarity===r?'':r)}
                 style={{display:'flex',alignItems:'center',gap:5,cursor:'pointer',
                   opacity:filterRarity&&filterRarity!==r?0.3:1,transition:'opacity 0.1s'}}>
@@ -707,7 +708,7 @@ function LibraryInner() {
             style={{fontFamily:'var(--ff-pixel)',fontSize:10,background:'var(--bg)',
               border:'1px solid var(--border)',color:'var(--text2)',padding:'7px 10px',cursor:'pointer'}}>
             <option value="">ALL RARITIES</option>
-            {RARITY_ORDER.map(r=><option key={r} value={r}>{r.toUpperCase()} ({rarityCounts[r] ?? 0})</option>)}
+            {visibleRarityOrder.map(r=><option key={r} value={r}>{r.toUpperCase()} ({rarityCounts[r] ?? 0})</option>)}
           </select>
 
           {(search||filterEnergy||filterRarity)&&(

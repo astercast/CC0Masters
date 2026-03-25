@@ -91,7 +91,7 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
     <div onClick={onClick}
       className={`species-card-wrap card-${sp.energy.toLowerCase()} rarity-${sp.rarity.toLowerCase()}`}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{
+      style={{'--card-col':col,
         background:hov
           ?`linear-gradient(145deg,${col}12 0%,var(--bg3) 40%,var(--panel) 100%)`
           :`linear-gradient(145deg,var(--bg3) 0%,var(--panel) 100%)`,
@@ -101,9 +101,10 @@ function Card({sp,holders,onClick}:{sp:Species;holders:number;onClick:()=>void})
         boxShadow:hov?`0 12px 32px ${col}18, 0 4px 12px rgba(0,0,0,0.4)`:
           `0 2px 8px rgba(0,0,0,0.3)`,
         transition:'all 0.15s ease',
-      }}>
+      } as React.CSSProperties}>
       {/* Holo sheen */}
       <div className="holo-sheen"/>
+      <div className="card-accent-bar"/>
       {/* Energy color top bar */}
       <div style={{position:'absolute',top:0,left:0,right:0,height:3,
         background:`linear-gradient(90deg,transparent,${col},transparent)`,
@@ -312,9 +313,9 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
               </span>
             </div>
             {desc&&(
-              <div style={{fontFamily:'var(--ff-mono)',fontSize:13,color:'var(--text)',
+              <div className="species-description" style={{fontFamily:'var(--ff-mono)',fontSize:13,color:'var(--text)',
                 lineHeight:1.8,fontStyle:'italic',opacity:0.9,maxWidth:420,
-                borderLeft:`2px solid ${col}40`,paddingLeft:12}}>
+                borderLeft:`2px solid ${col}60`,paddingLeft:12}}>
                 "{desc}"
               </div>
             )}
@@ -342,7 +343,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
 
         {/* ── ACTIONS ── */}
         <div style={{padding:mobile?'0 16px 14px':'0 32px 20px',display:'flex',gap:8,flexWrap:'wrap'}}>
-          <button className="btn btn-primary" style={{fontSize:12,letterSpacing:1}}
+          <button className="btn btn-primary btn-opensea" style={{fontSize:12,letterSpacing:1}}
             onClick={()=>goLink(`https://opensea.io/collection/cc0mon?searchQuery=${encodeURIComponent(sp.name)}`)}>
             🌊 OPENSEA
           </button>
@@ -373,7 +374,7 @@ function DetailModal({sp,holderMap,supplyMap,setHolderMap,descMap,mobile,allSpec
             ):(
               <div style={{display:'flex',flexDirection:'column',gap:3,maxHeight:mobile?140:220,overflowY:'auto'}}>
                 {holders.slice(0,12).map((h,i)=>(
-                  <div key={h.address} onClick={()=>goLink(`https://opensea.io/${h.address}`)}
+                  <div key={h.address} className="holder-row" onClick={()=>goLink(`https://opensea.io/${h.address}`)}
                     style={{display:'flex',alignItems:'center',gap:8,padding:'6px 8px',
                       background:'var(--bg)',border:'1px solid var(--border)',
                       cursor:'pointer',transition:'border-color 0.1s,background 0.1s'}}
@@ -515,7 +516,7 @@ function LibraryInner() {
         onNo={()=>setConfirm(null)}/>}
 
       {/* ── HEADER ── */}
-      <header style={{background:'var(--bg2)',borderBottom:'2px solid var(--green1)',position:'sticky',top:0,zIndex:100}}>
+      <header className="library-header" style={{background:'var(--bg2)',borderBottom:'2px solid var(--green1)',position:'sticky',top:0,zIndex:100}}>
         {/* top strip */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
           padding:'8px 24px',borderBottom:'1px solid var(--border)',background:'var(--bg)'}}>
@@ -629,7 +630,7 @@ function LibraryInner() {
       </header>
 
       {/* ── GRID / LIST ── */}
-      <main style={{padding:'20px 24px',maxWidth:1600,margin:'0 auto',
+      <main className="library-grid" style={{padding:'20px 24px',maxWidth:1600,margin:'0 auto',
         backgroundImage:'radial-gradient(circle,var(--green0) 1px,transparent 1px)',
         backgroundSize:'28px 28px'}}>
 

@@ -803,7 +803,7 @@ export default function CC0Masters() {
             <div style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text2)',letterSpacing:3,marginBottom:4}}>
               WHO WILL COLLECT THEM ALL<span className="blink">_</span>
             </div>
-            <div className="px-divider" style={{width:200}}/>
+            <div className="title-underline"/>
           </div>
 
           {/* Stats */}
@@ -834,7 +834,7 @@ export default function CC0Masters() {
                   color:`${color}20`,lineHeight:1,
                   pointerEvents:'none',userSelect:'none'}}>{icon}</div>
                 {/* value */}
-                <div style={{fontFamily:'var(--ff-pixel)',fontSize:26,color,lineHeight:1,marginBottom:6,
+                <div className="stat-num" style={{fontFamily:'var(--ff-pixel)',fontSize:26,color,lineHeight:1,marginBottom:6,
                   textShadow:color!=='var(--text2)'?`0 0 16px ${color}90`:'none',letterSpacing:-1}}>
                   {value>0?<AnimatedNumber value={value}/>:'--'}
                 </div>

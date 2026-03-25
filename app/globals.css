@@ -846,3 +846,314 @@ input[type="text"]:focus, select:focus {
   33%       { background-position: 100% 50%; }
   66%       { background-position: 50% 100%; }
 }
+
+/* ══════════════════════════════════════
+   LIBRARY VISUAL UPGRADE PACK
+   ══════════════════════════════════════ */
+
+/* ── Library card: energy glow aura on hover ── */
+.species-card-wrap {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.species-card-wrap:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--card-col, var(--lime));
+}
+
+/* ── Card inner glow pulse on hover ── */
+.species-card-wrap::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse at 50% 100%, var(--card-col, var(--lime)) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.species-card-wrap:hover::after { opacity: 0.07; }
+
+/* ── Card top accent bar animates to full width on hover ── */
+.card-accent-bar {
+  position: absolute; top: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--card-col, var(--lime)), transparent);
+  width: 100%;
+  transform: scaleX(0.3);
+  transform-origin: center;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0.5;
+}
+.species-card-wrap:hover .card-accent-bar {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* ── Energy badges: pill style with glow ── */
+.energy-badge {
+  font-family: var(--ff-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+.energy-badge::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: currentColor;
+  opacity: 0.12;
+}
+
+/* ── Rarity stars in list view ── */
+.rarity-stars::before {
+  content: attr(data-stars);
+  font-size: 8px;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+/* ── Library modal: full glassmorphism treatment ── */
+.library-modal-inner {
+  background: linear-gradient(
+    160deg,
+    rgba(10,18,9,0.97) 0%,
+    rgba(6,13,6,0.98) 60%,
+    rgba(5,10,5,0.99) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+/* Ambient corner glow matching energy type */
+.library-modal-inner::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: var(--card-col, var(--lime));
+  opacity: 0.04;
+  filter: blur(60px);
+  pointer-events: none;
+}
+.library-modal-inner::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: var(--card-col, var(--lime));
+  opacity: 0.03;
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+/* ── Stat cells in modal: micro hover lift ── */
+.modal-stat-cell {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  cursor: default;
+}
+.modal-stat-cell:hover {
+  transform: translateY(-2px);
+  border-color: var(--card-col, var(--lime)) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 12px var(--card-col, rgba(124,232,50,0.15)) !important;
+}
+
+/* ── Modal sprite frame glow ── */
+.modal-sprite-frame {
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+.modal-sprite-frame:hover {
+  box-shadow: 0 0 40px var(--card-col, rgba(124,232,50,0.3)) !important;
+}
+
+/* ── Description text: typewriter feel ── */
+.species-description {
+  font-style: italic;
+  line-height: 1.8;
+  position: relative;
+  padding-left: 12px;
+}
+.species-description::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 2px;
+  background: var(--card-col, var(--lime));
+  opacity: 0.4;
+}
+
+/* ── Holder list items: smooth hover ── */
+.holder-row {
+  transition: border-color 0.1s, background 0.1s, transform 0.1s;
+}
+.holder-row:hover {
+  transform: translateX(3px);
+  background: rgba(124,232,50,0.04) !important;
+}
+
+/* ── Library grid: subtle column lines ── */
+.library-grid {
+  background-image:
+    radial-gradient(circle, rgba(30,58,26,0.6) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── List view rows ── */
+.library-list-row {
+  transition: background 0.1s, border-color 0.1s, transform 0.1s;
+}
+.library-list-row:hover {
+  background: rgba(124,232,50,0.03) !important;
+  border-color: var(--green1) !important;
+  transform: translateX(2px);
+}
+
+/* ── Filter/sort bar: frosted glass ── */
+.filter-bar {
+  background: linear-gradient(180deg, var(--bg) 0%, rgba(6,13,6,0.95) 100%);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ── Sticky filter bar on library page ── */
+.library-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+/* ── Leaderboard: stat cards animated counter-up ── */
+.stat-num {
+  display: inline-block;
+  animation: statReveal 0.6s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes statReveal {
+  from { opacity:0; transform:translateY(8px) scale(0.9); filter:blur(2px); }
+  to   { opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
+}
+
+/* ── Main header: animated gradient title underline ── */
+.title-underline {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lime) 30%, var(--gold) 50%, var(--lime) 70%, transparent);
+  background-size: 200%;
+  animation: titleUnderline 4s ease-in-out infinite;
+  margin-top: 6px;
+  width: 220px;
+}
+@keyframes titleUnderline {
+  0%, 100% { background-position: 0%; opacity:0.6; }
+  50%       { background-position: 100%; opacity:1; }
+}
+
+/* ── Progress bars: animated fill ── */
+.pbar-fill {
+  animation: barFill 0.8s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes barFill {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
+}
+
+/* ── OpenSea button: ocean wave effect ── */
+.btn-opensea {
+  position: relative;
+  overflow: hidden;
+}
+.btn-opensea::before {
+  content: '';
+  position: absolute;
+  bottom: -50%;
+  left: -10%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(64,176,255,0.12));
+  border-radius: 50%;
+  transform: scaleX(1.5);
+  animation: oceanWave 3s ease-in-out infinite;
+}
+@keyframes oceanWave {
+  0%, 100% { transform: scaleX(1.5) translateY(0); }
+  50%       { transform: scaleX(1.5) translateY(-30%); }
+}
+
+/* ── Library title: chromatic aberration on hover ── */
+.library-title-wrap:hover .lib-title-r {
+  animation: chromaticR 0.3s ease both;
+}
+.library-title-wrap:hover .lib-title-b {
+  animation: chromaticB 0.3s ease both;
+}
+@keyframes chromaticR { 0%,100%{transform:translateX(-2px)} 50%{transform:translateX(-4px)} }
+@keyframes chromaticB { 0%,100%{transform:translateX(2px)} 50%{transform:translateX(4px)} }
+
+/* ── Podium card inner content: stagger reveal ── */
+.podium-content > * {
+  animation: podiumReveal 0.5s ease both;
+}
+.podium-content > *:nth-child(1) { animation-delay: 0.05s; }
+.podium-content > *:nth-child(2) { animation-delay: 0.1s; }
+.podium-content > *:nth-child(3) { animation-delay: 0.15s; }
+.podium-content > *:nth-child(4) { animation-delay: 0.2s; }
+@keyframes podiumReveal {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Wallet search: animated border sweep on focus ── */
+.wallet-search-wrap {
+  position: relative;
+}
+.wallet-search-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%;
+  width: 0; height: 1px;
+  background: var(--lime);
+  transition: width 0.3s ease, left 0.3s ease;
+}
+.wallet-search-wrap:focus-within::after {
+  width: 100%; left: 0;
+  box-shadow: 0 0 8px var(--lime);
+}
+
+/* ── Species cells: collected ones sparkle ── */
+@keyframes cellSparkle {
+  0%, 90%, 100% { box-shadow: none; }
+  92% { box-shadow: inset 0 0 8px rgba(124,232,50,0.2), 0 0 4px rgba(124,232,50,0.3); }
+  94% { box-shadow: none; }
+  96% { box-shadow: inset 0 0 4px rgba(124,232,50,0.15); }
+}
+.species-cell.collected {
+  animation: cellSparkle 8s ease-in-out infinite;
+}
+
+/* ── Scrollbar upgraded ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--green1), var(--green2));
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--green2), var(--lime));
+  box-shadow: 0 0 4px var(--lime);
+}
+
+/* ── Mobile: reduce motion for particles ── */
+@media (prefers-reduced-motion: reduce) {
+  .particle, .energy-bar, .sprite-parade, .rank1-foil,
+  .rarity-legendary, .rarity-epic { animation: none !important; }
+}
+
+/* ── Mobile library card: slightly smaller ── */
+@media (max-width: 640px) {
+  .species-card-wrap:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+}

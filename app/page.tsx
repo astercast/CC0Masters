@@ -557,6 +557,12 @@ export default function CC0Masters() {
   const [liveOwners,setLiveOwners]       = useState(0);
   const [lastRefreshed,setLastRefreshed] = useState<Date|null>(null);
   const [nextRefreshIn,setNextRefreshIn] = useState(300);
+  // Seconds until next top-of-hour cron run
+  const getCronSecondsLeft = () => {
+    const now = new Date();
+    return 3600 - (now.getMinutes() * 60 + now.getSeconds());
+  };
+  const [cronSecondsLeft,setCronSecondsLeft] = useState(getCronSecondsLeft);
   const scanAbort = useRef(false);
   const rowRefs = useRef<Record<string,HTMLElement|null>>({});
   const rankingsRef = useRef<HTMLDivElement|null>(null);
@@ -592,9 +598,12 @@ export default function CC0Masters() {
     return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible); };
   }, [fetchLeaderboard]);
 
-  // Countdown to next refresh
+  // Countdowns
   useEffect(()=>{
-    const t = setInterval(()=>setNextRefreshIn(n=>Math.max(0,n-1)),1000);
+    const t = setInterval(()=>{
+      setNextRefreshIn(n=>Math.max(0,n-1));
+      setCronSecondsLeft(getCronSecondsLeft());
+    },1000);
     return()=>clearInterval(t);
   },[]);
 
@@ -765,7 +774,7 @@ export default function CC0Masters() {
           </div>
           <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
             {!mobile&&<span style={{fontFamily:'var(--ff-pixel)',fontSize:12,color:'var(--text3)',letterSpacing:1}}>
-              NEXT UPDATE: <span style={{color:'var(--text2)'}}>{Math.floor(nextRefreshIn/60)}:{String(nextRefreshIn%60).padStart(2,'0')}</span>
+              CRON: <span style={{color:'var(--text2)'}}>{Math.floor(cronSecondsLeft/60)}:{String(cronSecondsLeft%60).padStart(2,'0')}</span>
             </span>}
             <div style={{display:'flex',alignItems:'center',gap:6}}>
               <div style={{width:7,height:7,background:'var(--lime)',borderRadius:0,

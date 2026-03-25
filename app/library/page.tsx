@@ -654,10 +654,7 @@ function LibraryInner() {
                 CC0MON LIBRARY
               </div>
             </div>
-            <div className="library-hero-subtitle" style={{fontFamily:'var(--ff-pixel)',fontSize:10,color:'var(--text3)',
-              letterSpacing:2,marginBottom:14}}>
-              Browse every species, inspect holder depth, and explore rarity with the same motion language as the leaderboard podium.
-            </div>
+
           </div>
           {/* quick rarity legend */}
           <div className="library-hero-legend" style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:14,marginLeft:'auto'}}>

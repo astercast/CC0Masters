@@ -369,56 +369,68 @@ function MedalIcon({ rank, size=48 }: { rank:1|2|3; size?:number }) {
 function PodiumCard({ entry, rank, onClick, isOpen, mobile=false }: { entry:LeaderboardEntry; rank:1|2|3; onClick:()=>void; isOpen:boolean; mobile?:boolean }) {
   const COLORS = {1:'var(--gold)',2:'var(--silver)',3:'var(--bronze)'};
   const LABELS = {1:'CHAMPION',2:'2ND PLACE',3:'3RD PLACE'};
-  const VARIANTS = {1:'gold' as const,2:'silver' as const,3:'bronze' as const};
+  const pct = parseFloat(entry.progress);
+  const energyEntries = Object.entries(entry.byEnergy ?? {})
+    .map(([energy, stats]) => [energy, stats.total] as const)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
 
   return (
     <div onClick={onClick} className={`podium-card rank-${rank}${isOpen?' open':''}`}
       style={{animation:`fadeUp 0.5s ease ${rank===1?100:rank===2?0:200}ms both`}}>
-      {/* top accent stripe */}
-      <div style={{position:'absolute',top:0,left:0,right:0,height:3,
-        background:`linear-gradient(90deg,transparent,${COLORS[rank]},transparent)`,zIndex:3}}/>
-      {/* corner decorations */}
-      <div style={{position:'absolute',top:6,left:6,width:12,height:12,borderTop:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
-      <div style={{position:'absolute',top:6,right:6,width:12,height:12,borderTop:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
-      <div style={{position:'absolute',bottom:6,left:6,width:12,height:12,borderBottom:`2px solid ${COLORS[rank]}`,borderLeft:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
-      <div style={{position:'absolute',bottom:6,right:6,width:12,height:12,borderBottom:`2px solid ${COLORS[rank]}`,borderRight:`2px solid ${COLORS[rank]}`,opacity:0.6,zIndex:2}}/>
+      <div className="podium-shell" />
+      <div className="podium-noise" />
+      <div className="podium-halo" />
 
-      <div className="podium-content" style={{position:'relative',zIndex:2,textAlign:'center',padding:mobile?'6px 0 4px':'8px 0 4px'}}>
-        {/* rank label */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:10,color:COLORS[rank],letterSpacing:mobile?1:4,marginBottom:mobile?4:8,
-          textTransform:'uppercase',opacity:0.9}}>{LABELS[rank]}</div>
-
-        {/* SVG medal */}
-        <div style={{display:'flex',justifyContent:'center',marginBottom:mobile?6:10}}>
-          <MedalIcon rank={rank} size={mobile?(rank===1?36:28):(rank===1?56:42)}/>
+      <div className="podium-content" style={{position:'relative',zIndex:2,padding:mobile?'10px':'16px'}}>
+        <div className="podium-topline">
+          <span className="podium-rank-chip" style={{color:COLORS[rank],borderColor:`${COLORS[rank]}55`}}>{LABELS[rank]}</span>
+          <span className="podium-rank-index" style={{color:COLORS[rank]}}>0{rank}</span>
         </div>
 
-        {/* address */}
-        {!mobile&&<div style={{marginBottom:10,minHeight:20,padding:'6px 10px',
-          background:'var(--bg)',border:`1px solid ${COLORS[rank]}15`}}>
-          <AddressDisplay address={entry.address}/>
-        </div>}
-        {mobile&&<div style={{marginBottom:6,minHeight:16,fontFamily:'var(--ff-mono)',
-          fontSize:8,color:'var(--text2)',textAlign:'center',overflow:'hidden',
-          textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 4px'}}>
-          {entry.address.slice(0,6)}…{entry.address.slice(-4)}
-        </div>}
-
-        {/* big number */}
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?(rank===1?20:16):rank===1?40:26,color:COLORS[rank],
-          lineHeight:1,marginBottom:2,letterSpacing:-1}}>
-          {entry.collected}
-          <span style={{fontSize:mobile?9:rank===1?15:12,color:'var(--text3)',marginLeft:mobile?2:4}}>/{TOTAL_SPECIES}</span>
+        <div className="podium-medal-wrap">
+          <div className="podium-medal-ring" style={{borderColor:`${COLORS[rank]}33`}} />
+          <MedalIcon rank={rank} size={mobile?(rank===1?42:34):(rank===1?68:54)}/>
         </div>
-        <div style={{fontFamily:'var(--ff-pixel)',fontSize:mobile?7:9,color:'var(--text3)',letterSpacing:mobile?1:2,marginBottom:mobile?6:10}}>COLLECTED</div>
 
-        <ProgressBar pct={parseFloat(entry.progress)} variant={VARIANTS[rank]} height={mobile?3:rank===1?7:5}/>
+        <div className="podium-identity">
+          <div className="podium-address-wrap">
+            {!mobile ? <AddressDisplay address={entry.address}/> : `${entry.address.slice(0,6)}…${entry.address.slice(-4)}`}
+          </div>
+        </div>
 
-        <div style={{marginTop:mobile?5:8,fontFamily:'var(--ff-pixel)',fontSize:mobile?7:10,letterSpacing:1,
-          display:'flex',justifyContent:'center',gap:mobile?5:10,alignItems:'center'}}>
-          <span style={{color:COLORS[rank]}}>{entry.progress}</span>
-          <span style={{color:'var(--border2)',fontSize:6}}>●</span>
-          <span style={{color:'var(--text3)'}}>{entry.totalTokensHeld} TKN</span>
+        <div className="podium-metric-band">
+          <div className="podium-main-stat">
+            <span className="podium-main-value" style={{color:COLORS[rank],fontSize:mobile?(rank===1?24:20):(rank===1?52:36)}}>{entry.collected}</span>
+            <span className="podium-main-total">/{TOTAL_SPECIES}</span>
+          </div>
+          <div className="podium-main-label">MASTER SET PROGRESS</div>
+        </div>
+
+        <div className="podium-progress-wrap">
+          <div className="podium-progress-track">
+            <div className={`podium-progress-fill rank-${rank}`} style={{width:`${pct}%`}} />
+          </div>
+          <div className="podium-progress-meta">
+            <span className="podium-progress-pct" style={{color:COLORS[rank]}}>{entry.progress}</span>
+            <span className="podium-progress-tokens">{entry.totalTokensHeld.toLocaleString()} TOKENS</span>
+          </div>
+        </div>
+
+        <div className="podium-energy-strip">
+          {energyEntries.map(([energy, value])=>(
+            <div key={energy} className="podium-energy-pill">
+              <span className="podium-energy-dot" style={{background:ENERGY_COLORS[energy] || 'var(--lime)'}} />
+              <span>{energy}</span>
+              <span className="podium-energy-count">{value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="podium-footerline">
+          <span className="podium-footer-stat">{entry.missing === 0 ? 'COMPLETE SET' : `NEEDS ${entry.missing}`}</span>
+          <span className="podium-footer-divider" />
+          <span className="podium-footer-stat">CLICK TO INSPECT</span>
         </div>
       </div>
     </div>
@@ -595,6 +607,8 @@ export default function CC0Masters() {
   const scanAbort = useRef(false);
   const rowRefs = useRef<Record<string,HTMLElement|null>>({});
   const rankingsRef = useRef<HTMLDivElement|null>(null);
+  const cursorRef = useRef<HTMLDivElement|null>(null);
+  const cursorGlowRef = useRef<HTMLDivElement|null>(null);
 
   const handlePodiumClick = (address: string) => {
     // Scroll to the row in the rankings table and open it there
@@ -655,6 +669,71 @@ export default function CC0Masters() {
       setRegistryData(prev=>{ const n={...prev}; for(const [k,v] of Object.entries(rd)) n[k]={...n[k],...v}; return n; });
     }).catch(()=>{});
   },[]);
+
+  useEffect(()=>{
+    if (mobile) return;
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+
+    document.body.classList.add('cursor-active');
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let coreX = mouseX;
+    let coreY = mouseY;
+    let glowX = mouseX;
+    let glowY = mouseY;
+    let raf = 0;
+
+    const updateInteractiveState = (target: EventTarget | null) => {
+      const el = target instanceof HTMLElement ? target : null;
+      const interactive = el?.closest('a, button, input, select, summary, .btn, .podium-card, .grid-row, [role="button"]');
+      document.body.classList.toggle('cursor-clickable', !!interactive);
+    };
+
+    const animate = () => {
+      coreX += (mouseX - coreX) * 0.34;
+      coreY += (mouseY - coreY) * 0.34;
+      glowX += (mouseX - glowX) * 0.16;
+      glowY += (mouseY - glowY) * 0.16;
+
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate(${coreX}px, ${coreY}px) translate(-50%, -50%)`;
+      }
+      if (cursorGlowRef.current) {
+        cursorGlowRef.current.style.transform = `translate(${glowX}px, ${glowY}px) translate(-50%, -50%)`;
+      }
+
+      raf = window.requestAnimationFrame(animate);
+    };
+
+    const onMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      updateInteractiveState(e.target);
+    };
+
+    const onDown = () => document.body.classList.add('cursor-pressed');
+    const onUp = () => document.body.classList.remove('cursor-pressed');
+    const onLeave = () => document.body.classList.add('cursor-hidden');
+    const onEnter = () => document.body.classList.remove('cursor-hidden');
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('mouseup', onUp);
+    document.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseenter', onEnter);
+    raf = window.requestAnimationFrame(animate);
+
+    return () => {
+      document.body.classList.remove('cursor-active', 'cursor-clickable', 'cursor-pressed', 'cursor-hidden');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseenter', onEnter);
+      window.cancelAnimationFrame(raf);
+    };
+  }, [mobile]);
 
   const startScan = async()=>{
     if (!isAdmin) {
@@ -1318,6 +1397,15 @@ export default function CC0Masters() {
 
         </div>
       </footer>
+
+      {!mobile && (
+        <>
+          <div ref={cursorGlowRef} className="crystal-cursor-glow" aria-hidden="true" />
+          <div ref={cursorRef} className="crystal-cursor" aria-hidden="true">
+            <img src="/cursor-crystal.svg" alt="" draggable={false} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

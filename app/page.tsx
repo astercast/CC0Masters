@@ -1097,94 +1097,100 @@ export default function CC0Masters() {
               ):(
                 /* ── DESKTOP: full table ── */
                 <div style={{overflowX:'auto'}}>
-                  <table className="lb-table" style={{width:'100%',tableLayout:'fixed'}}>
-                    <colgroup>
-                      <col style={{width:'4%'}}/>
-                      <col style={{width:'17%'}}/>
-                      <col style={{width:'35%'}}/>
-                      <col style={{width:'8%'}}/>
-                      <col style={{width:'20%'}}/>
-                      <col style={{width:'16%'}}/>
-                    </colgroup>
+                  <table className="lb-table" style={{width:'100%'}}>
                     <thead>
                       <tr>
-                        <th className="lb-th" style={{textAlign:'center'}}>#</th>
-                        <th className="lb-th" style={{textAlign:'left'}}>WALLET</th>
-                        <th className="lb-th" style={{textAlign:'left'}}>PROGRESS</th>
-                        <th className="lb-th" style={{textAlign:'center'}}>TOKENS</th>
-                        <th className="lb-th" style={{textAlign:'center'}}>ENERGY</th>
-                        <th className="lb-th" style={{textAlign:'center'}}>STATUS</th>
+                        <th style={{textAlign:'center',width:44}}>#</th>
+                        <th style={{textAlign:'left'}}>WALLET</th>
+                        <th style={{textAlign:'left',width:'99%'}}>PROGRESS</th>
+                        <th style={{textAlign:'right',whiteSpace:'nowrap'}}>TOKENS</th>
+                        <th style={{textAlign:'center',whiteSpace:'nowrap'}}>ENERGY</th>
+                        <th style={{textAlign:'center',whiteSpace:'nowrap'}}>STATUS</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sorted.map((entry,i)=>{
                         const pct=parseFloat(entry.progress);
                         const isOpen=openRow===entry.address;
-                        const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text2)';
+                        const rankColor=i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text3)';
                         const variantArr=['gold','silver','bronze'] as const;
                         const pv=i<3?variantArr[i]:'green';
+                        const isTop3=i<3;
                         return [
                           <tr key={entry.address} ref={el=>{rowRefs.current[entry.address]=el;}} className={`lb-row${isOpen?' open':''}`}
                             onClick={()=>setOpenRow(isOpen?null:entry.address)}
                             style={{
                               animation:`fadeUp 0.25s ease ${Math.min(i*14,420)}ms both`,
-                              borderLeft:i<3?`3px solid ${rankColor}`:'3px solid transparent',
-                              background:i===0?`linear-gradient(90deg,rgba(255,208,64,0.05) 0%,transparent 60%)`
-                                :i===1?`linear-gradient(90deg,rgba(144,184,160,0.04) 0%,transparent 60%)`
-                                :i===2?`linear-gradient(90deg,rgba(200,112,48,0.04) 0%,transparent 60%)`
-                                :isOpen?'rgba(124,232,50,0.03)':'',
+                              background:isOpen?'rgba(124,232,50,0.04)':i%2===0?'rgba(10,18,9,0.3)':'transparent',
                             }}>
-                            <td style={{textAlign:'center'}}>
+                            {/* RANK */}
+                            <td style={{textAlign:'center',padding:'10px 8px',borderLeft:isTop3?`3px solid ${rankColor}`:'3px solid transparent'}}>
                               <span style={{
                                 fontFamily:'var(--ff-pixel)',
-                                fontSize:i<3?15:12,
-                                fontWeight:i<3?700:400,
+                                fontSize:isTop3?14:11,
                                 color:rankColor,
-                                textShadow:i<3?`0 0 8px ${rankColor}40`:'none',
                               }}>{i+1}</span>
                             </td>
-                            <td><AddressDisplay address={entry.address}/></td>
-                            <td>
-                              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                            {/* WALLET */}
+                            <td style={{padding:'10px 12px',whiteSpace:'nowrap'}}>
+                              <AddressDisplay address={entry.address}/>
+                            </td>
+                            {/* PROGRESS — this column expands to fill space */}
+                            <td style={{padding:'10px 16px 10px 12px'}}>
+                              <div style={{display:'flex',alignItems:'center',gap:10,minWidth:200}}>
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:i<3?18:14,color:rankColor,
-                                  minWidth:50,flexShrink:0,
-                                }}>{entry.collected}<span style={{fontSize:9,color:'var(--text3)',marginLeft:2}}>/{TOTAL_SPECIES}</span></span>
-                                <div style={{flex:1,minWidth:50}}>
-                                  <ProgressBar pct={pct} variant={pv} height={6}/>
+                                  fontFamily:'var(--ff-pixel)',
+                                  fontSize:isTop3?16:13,
+                                  color:isTop3?rankColor:'var(--text)',
+                                  minWidth:36,flexShrink:0,
+                                }}>{entry.collected}</span>
+                                <div style={{flex:1,height:8,background:'rgba(255,255,255,0.04)',borderRadius:1,overflow:'hidden',position:'relative',minWidth:80}}>
+                                  <div style={{
+                                    height:'100%',
+                                    width:`${pct}%`,
+                                    background:pct>=100
+                                      ?'linear-gradient(90deg,var(--lime),var(--bright))'
+                                      :pct>80?'linear-gradient(90deg,var(--green2),var(--lime))'
+                                      :pct>50?'linear-gradient(90deg,var(--green1),var(--green2))'
+                                      :'var(--green1)',
+                                    borderRadius:1,
+                                    transition:'width 0.6s ease',
+                                    boxShadow:pct>=80?'0 0 6px rgba(124,232,50,0.3)':'none',
+                                  }}/>
                                 </div>
                                 <span style={{
-                                  fontFamily:'var(--ff-mono)',fontSize:11,fontWeight:600,
-                                  color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text2)',
-                                  flexShrink:0,minWidth:42,textAlign:'right',
+                                  fontFamily:'var(--ff-mono)',fontSize:11,
+                                  color:pct>=100?'var(--lime)':pct>80?'var(--bright)':'var(--text3)',
+                                  flexShrink:0,minWidth:40,textAlign:'right',
                                 }}>{entry.progress}</span>
                               </div>
                             </td>
-                            <td style={{textAlign:'center'}}>
+                            {/* TOKENS */}
+                            <td style={{textAlign:'right',padding:'10px 14px 10px 10px',whiteSpace:'nowrap'}}>
                               <span style={{
-                                fontFamily:'var(--ff-mono)',fontSize:13,fontWeight:600,
-                                color:entry.totalTokensHeld>300?'var(--bright)':'var(--text2)',
+                                fontFamily:'var(--ff-mono)',fontSize:12,
+                                color:'var(--text2)',
                               }}>{entry.totalTokensHeld.toLocaleString()}</span>
                             </td>
-                            <td style={{textAlign:'center'}}><EnergyDots byEnergy={entry.byEnergy}/></td>
-                            <td style={{textAlign:'center'}}>
+                            {/* ENERGY */}
+                            <td style={{textAlign:'center',padding:'10px 10px',whiteSpace:'nowrap'}}>
+                              <EnergyDots byEnergy={entry.byEnergy}/>
+                            </td>
+                            {/* STATUS */}
+                            <td style={{textAlign:'center',padding:'10px 14px 10px 10px',whiteSpace:'nowrap'}}>
                               {entry.missing===0?(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:10,letterSpacing:1,
+                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:1,
                                   color:'var(--lime)',
                                   border:'1px solid var(--green2)',
-                                  background:'rgba(124,232,50,0.12)',
-                                  padding:'3px 8px',borderRadius:2,
-                                  whiteSpace:'nowrap',display:'inline-block',
+                                  background:'rgba(124,232,50,0.1)',
+                                  padding:'3px 8px',
+                                  display:'inline-block',
                                 }}>✓ COMPLETE</span>
                               ):(
                                 <span style={{
-                                  fontFamily:'var(--ff-pixel)',fontSize:9,letterSpacing:0.5,
-                                  color:entry.missing<5?'var(--amber)':entry.missing<30?'var(--text)':'var(--text3)',
-                                  whiteSpace:'nowrap',
-                                  background:entry.missing<5?'rgba(255,180,50,0.08)':'rgba(255,255,255,0.03)',
-                                  border:entry.missing<5?'1px solid rgba(255,180,50,0.2)':'1px solid rgba(255,255,255,0.05)',
-                                  padding:'3px 6px',borderRadius:2,
+                                  fontFamily:'var(--ff-pixel)',fontSize:9,
+                                  color:entry.missing<=10?'var(--amber)':entry.missing<=50?'var(--text2)':'var(--text3)',
                                   display:'inline-block',
                                 }}>
                                   NEEDS {entry.missing}

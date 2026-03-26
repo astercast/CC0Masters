@@ -18,7 +18,7 @@ function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
   for (let i = 0; i <= retries; i++) {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000), cache: 'no-store' });
     if (res.status === 429) { await sleep(65000); continue; }
     if (!res.ok && i < retries) { await sleep(2000); continue; }
     return res;
@@ -231,8 +231,12 @@ export async function runIncrementalUpdate(log: (phase: string, pct: number, det
   const leaderMap = new Map<string, LeaderboardEntry>();
   for (const entry of existing.leaders) leaderMap.set(entry.address.toLowerCase(), entry);
   for (const c of refreshed) {
-    const { checklist: _, ...rest } = c as typeof c & { checklist?: unknown };
-    leaderMap.set(c.address.toLowerCase(), { rank: 0, ...rest } as LeaderboardEntry);
+    const { checklist, ...rest } = c as typeof c & { checklist?: Array<{ number: string; name: string; collected: boolean }> };
+    // Convert checklist → collectedSpeciesNums so species data is never lost in the blob
+    const collectedSpeciesNums: number[] | undefined =
+      (rest as any).collectedSpeciesNums ??
+      (checklist ? checklist.filter(s => s.collected).map(s => parseInt(s.number, 10)) : undefined);
+    leaderMap.set(c.address.toLowerCase(), { rank: 0, ...rest, collectedSpeciesNums } as LeaderboardEntry);
   }
 
   const result_leaders = Array.from(leaderMap.values()).filter(e => e.totalTokensHeld > 0 || e.collected > 0);
